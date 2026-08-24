@@ -1,0 +1,332 @@
+{
+ "genere_par": "scripts/genere_fixtures_parite.py",
+ "date": "2026-07-31",
+ "heure": "15:00",
+ "quantification": "np.rint(fraction_ombre*100)/100, NaN -> fraction_soleil 0 (identique a l'export)",
+ "cas": [
+  {
+   "nom": "SaintPaul_Turenne",
+   "depart": [
+    2.3605,
+    48.8542
+   ],
+   "arrivee": [
+    2.367,
+    48.8618
+   ],
+   "k": 0,
+   "plafond_detour": null,
+   "date": "2026-07-31",
+   "heure": "15:00",
+   "attendu": {
+    "distance_m": 1318.058,
+    "cout_pondere": 1468.058,
+    "distance_ombre_m": 658.904,
+    "distance_soleil_m": 522.386,
+    "distance_non_evaluee_m": 136.768,
+    "nb_traversees": 10,
+    "distance_direct_m": 1318.058,
+    "ratio_detour": 1.0,
+    "k_effectif": 0.0,
+    "plafonne": false
+   }
+  },
+  {
+   "nom": "SaintPaul_Turenne",
+   "depart": [
+    2.3605,
+    48.8542
+   ],
+   "arrivee": [
+    2.367,
+    48.8618
+   ],
+   "k": 1,
+   "plafond_detour": null,
+   "date": "2026-07-31",
+   "heure": "15:00",
+   "attendu": {
+    "distance_m": 1363.664,
+    "cout_pondere": 1829.733,
+    "distance_ombre_m": 964.279,
+    "distance_soleil_m": 241.068,
+    "distance_non_evaluee_m": 158.317,
+    "nb_traversees": 13,
+    "distance_direct_m": 1318.058,
+    "ratio_detour": 1.0346,
+    "k_effectif": 1,
+    "plafonne": false
+   }
+  },
+  {
+   "nom": "SaintPaul_Turenne",
+   "depart": [
+    2.3605,
+    48.8542
+   ],
+   "arrivee": [
+    2.367,
+    48.8618
+   ],
+   "k": 4,
+   "plafond_detour": null,
+   "date": "2026-07-31",
+   "heure": "15:00",
+   "attendu": {
+    "distance_m": 1626.208,
+    "cout_pondere": 2198.722,
+    "distance_ombre_m": 1330.724,
+    "distance_soleil_m": 68.128,
+    "distance_non_evaluee_m": 227.356,
+    "nb_traversees": 18,
+    "distance_direct_m": 1318.058,
+    "ratio_detour": 1.23379,
+    "k_effectif": 4,
+    "plafonne": false
+   }
+  },
+  {
+   "nom": "SaintPaul_Turenne",
+   "depart": [
+    2.3605,
+    48.8542
+   ],
+   "arrivee": [
+    2.367,
+    48.8618
+   ],
+   "k": 4,
+   "plafond_detour": 1.05,
+   "date": "2026-07-31",
+   "heure": "15:00",
+   "attendu": {
+    "distance_m": 1363.664,
+    "cout_pondere": 1829.733,
+    "distance_ombre_m": 964.279,
+    "distance_soleil_m": 241.068,
+    "distance_non_evaluee_m": 158.317,
+    "nb_traversees": 13,
+    "distance_direct_m": 1318.058,
+    "ratio_detour": 1.0346,
+    "k_effectif": 1.0,
+    "plafonne": true
+   }
+  },
+  {
+   "nom": "Rivoli_Vosges",
+   "depart": [
+    2.352,
+    48.8535
+   ],
+   "arrivee": [
+    2.366,
+    48.857
+   ],
+   "k": 0,
+   "plafond_detour": null,
+   "date": "2026-07-31",
+   "heure": "15:00",
+   "attendu": {
+    "distance_m": 1541.328,
+    "cout_pondere": 1811.328,
+    "distance_ombre_m": 627.56,
+    "distance_soleil_m": 701.054,
+    "distance_non_evaluee_m": 212.714,
+    "nb_traversees": 16,
+    "distance_direct_m": 1541.328,
+    "ratio_detour": 1.0,
+    "k_effectif": 0.0,
+    "plafonne": false
+   }
+  },
+  {
+   "nom": "Rivoli_Vosges",
+   "depart": [
+    2.352,
+    48.8535
+   ],
+   "arrivee": [
+    2.366,
+    48.857
+   ],
+   "k": 1,
+   "plafond_detour": null,
+   "date": "2026-07-31",
+   "heure": "15:00",
+   "attendu": {
+    "distance_m": 1622.321,
+    "cout_pondere": 2203.812,
+    "distance_ombre_m": 1079.088,
+    "distance_soleil_m": 311.491,
+    "distance_non_evaluee_m": 231.742,
+    "nb_traversees": 18,
+    "distance_direct_m": 1541.328,
+    "ratio_detour": 1.05255,
+    "k_effectif": 1,
+    "plafonne": false
+   }
+  },
+  {
+   "nom": "Rivoli_Vosges",
+   "depart": [
+    2.352,
+    48.8535
+   ],
+   "arrivee": [
+    2.366,
+    48.857
+   ],
+   "k": 4,
+   "plafond_detour": null,
+   "date": "2026-07-31",
+   "heure": "15:00",
+   "attendu": {
+    "distance_m": 1748.118,
+    "cout_pondere": 2968.647,
+    "distance_ombre_m": 1257.813,
+    "distance_soleil_m": 218.882,
+    "distance_non_evaluee_m": 271.423,
+    "nb_traversees": 21,
+    "distance_direct_m": 1541.328,
+    "ratio_detour": 1.13416,
+    "k_effectif": 4,
+    "plafonne": false
+   }
+  },
+  {
+   "nom": "Rivoli_Vosges",
+   "depart": [
+    2.352,
+    48.8535
+   ],
+   "arrivee": [
+    2.366,
+    48.857
+   ],
+   "k": 4,
+   "plafond_detour": 1.05,
+   "date": "2026-07-31",
+   "heure": "15:00",
+   "attendu": {
+    "distance_m": 1561.555,
+    "cout_pondere": 2029.181,
+    "distance_ombre_m": 987.362,
+    "distance_soleil_m": 365.253,
+    "distance_non_evaluee_m": 208.941,
+    "nb_traversees": 17,
+    "distance_direct_m": 1541.328,
+    "ratio_detour": 1.01312,
+    "k_effectif": 0.5,
+    "plafonne": true
+   }
+  },
+  {
+   "nom": "OuestEst_plein_soleil",
+   "depart": [
+    2.3495,
+    48.857
+   ],
+   "arrivee": [
+    2.372,
+    48.8575
+   ],
+   "k": 0,
+   "plafond_detour": null,
+   "date": "2026-07-31",
+   "heure": "15:00",
+   "attendu": {
+    "distance_m": 2209.469,
+    "cout_pondere": 2554.469,
+    "distance_ombre_m": 1089.763,
+    "distance_soleil_m": 847.704,
+    "distance_non_evaluee_m": 272.001,
+    "nb_traversees": 22,
+    "distance_direct_m": 2209.469,
+    "ratio_detour": 1.0,
+    "k_effectif": 0.0,
+    "plafonne": false
+   }
+  },
+  {
+   "nom": "OuestEst_plein_soleil",
+   "depart": [
+    2.3495,
+    48.857
+   ],
+   "arrivee": [
+    2.372,
+    48.8575
+   ],
+   "k": 1,
+   "plafond_detour": null,
+   "date": "2026-07-31",
+   "heure": "15:00",
+   "attendu": {
+    "distance_m": 2278.001,
+    "cout_pondere": 3023.376,
+    "distance_ombre_m": 1651.882,
+    "distance_soleil_m": 220.375,
+    "distance_non_evaluee_m": 405.744,
+    "nb_traversees": 32,
+    "distance_direct_m": 2209.469,
+    "ratio_detour": 1.03102,
+    "k_effectif": 1,
+    "plafonne": false
+   }
+  },
+  {
+   "nom": "OuestEst_plein_soleil",
+   "depart": [
+    2.3495,
+    48.857
+   ],
+   "arrivee": [
+    2.372,
+    48.8575
+   ],
+   "k": 4,
+   "plafond_detour": null,
+   "date": "2026-07-31",
+   "heure": "15:00",
+   "attendu": {
+    "distance_m": 2495.365,
+    "cout_pondere": 3591.194,
+    "distance_ombre_m": 1924.526,
+    "distance_soleil_m": 123.957,
+    "distance_non_evaluee_m": 446.882,
+    "nb_traversees": 33,
+    "distance_direct_m": 2209.469,
+    "ratio_detour": 1.1294,
+    "k_effectif": 4,
+    "plafonne": false
+   }
+  },
+  {
+   "nom": "OuestEst_plein_soleil",
+   "depart": [
+    2.3495,
+    48.857
+   ],
+   "arrivee": [
+    2.372,
+    48.8575
+   ],
+   "k": 4,
+   "plafond_detour": 1.05,
+   "date": "2026-07-31",
+   "heure": "15:00",
+   "attendu": {
+    "distance_m": 2278.001,
+    "cout_pondere": 3243.751,
+    "distance_ombre_m": 1651.882,
+    "distance_soleil_m": 220.375,
+    "distance_non_evaluee_m": 405.744,
+    "nb_traversees": 32,
+    "distance_direct_m": 2209.469,
+    "ratio_detour": 1.03102,
+    "k_effectif": 2.0,
+    "plafonne": true
+   }
+  }
+ ]
+}
