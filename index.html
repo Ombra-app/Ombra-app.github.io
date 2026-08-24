@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Ombra</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- Application embarquee (phase 3, palier 3) : AUCUN serveur applicatif -
+     donnees tuilees statiques (data/paris/) + moteur de routage JS
+     (moteur.js, parite Python verifiee au palier 2). Seule dependance
+     reseau : les tuiles de fond OSM (limite documentee : sans reseau, le
+     fond manque mais trottoirs, itineraire et instructions fonctionnent). -->
+<script src="vendor/maplibre-gl.js"></script>
+<link href="vendor/maplibre-gl.css" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; font-family: -apple-system, system-ui, sans-serif; overscroll-behavior: none; }
+  #map { position: absolute; inset: 0; }
+  .panneau { position: absolute; left: 8px; right: 8px; z-index: 2;
+    background: rgba(255,255,255,.96); border-radius: 12px; box-shadow: 0 1px 8px rgba(0,0,0,.3); }
+  #haut { top: max(8px, env(safe-area-inset-top)); padding: 8px 12px; }
+  #ligne1 { display: flex; align-items: center; gap: 8px; }
+  #ligne1 strong { font-size: 15px; }
+  #date { border: 1px solid #ccc; border-radius: 6px; padding: 2px 4px; font-size: 13px; }
+  #heure-affichee { font-weight: 700; min-width: 44px; text-align: right; font-variant-numeric: tabular-nums; }
+  #heure { flex: 1; min-width: 60px; }
+  #ligne2 { display: flex; gap: 6px; margin-top: 8px; }
+  #ligne2 button { flex: 1; padding: 8px 4px; font-size: 13px; border: 1px solid #bbb;
+    border-radius: 8px; background: #f5f5f5; cursor: pointer; }
+  #ligne2 button.actif { background: #6a1b9a; color: #fff; border-color: #6a1b9a; }
+  #btn-geoloc, #btn-effacer { flex: 0 0 44px !important; }
+  #bas { bottom: max(8px, env(safe-area-inset-bottom)); padding: 8px 12px; max-height: 34vh; overflow-y: auto; }
+  #statut { font-size: 13px; color: #222; }
+  #statut.info { color: #555; }
+  #instructions { font-size: 12px; line-height: 1.5; margin: 6px 0 0; padding-left: 18px; }
+  #instructions .traversee { color: #6a1b9a; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="panneau" id="haut">
+  <div id="ligne1">
+    <strong>Ombra</strong>
+    <select id="date"></select>
+    <input type="range" id="heure" min="0" max="0" step="1" value="0">
+    <span id="heure-affichee">--:--</span>
+  </div>
+  <div id="ligne2">
+    <button data-k="0" class="actif">Direct</button>
+    <button data-k="1">Equilibre</button>
+    <button data-k="4">Ombre max</button>
+    <button id="btn-geoloc" title="Partir de ma position">&#128205;</button>
+    <button id="btn-effacer" title="Effacer">&#10005;</button>
+  </div>
+</div>
+<div class="panneau" id="bas">
+  <div id="statut" class="info">Chargement du modele...</div>
+  <ol id="instructions"></ol>
+</div>
+<script type="module">
+import { MoteurOmbra } from "./moteur.js";
+
+const $ = (id) => document.getElementById(id);
+const statutEl = $("statut"), instructionsEl = $("instructions");
+const dateSel = $("date"), heureInput = $("heure"), heureAff = $("heure-affichee");
+
+const lisJson = async (u) => { const r = await fetch(u); if (!r.ok) throw new Error(`${u}: ${r.status}`); return r.json(); };
+const manifest = await lisJson("data/paris/manifest.json");
+const moteur = new MoteurOmbra(
+  manifest,
+  (id) => lisJson(`data/paris/tuiles/${id}.json`),
+  (date, id) => lisJson(`data/paris/ombres/${date}/${id}.json`),
+);
+
+// Perimetre demonstrateur : on charge tout d'emblee (1,6 Mo gzip). A
+// l'echelle de Paris, ce prechargement deviendra paresseux comme le routage.
+await moteur.chargeToutesLesTuiles();
+
+const dates = Object.keys(manifest.dates);
+for (const d of dates) { const o = document.createElement("option"); o.value = o.textContent = d; dateSel.appendChild(o); }
+dateSel.value = dates[dates.length - 1];
+
+let pasListe = [];
+function majDate() {
+  pasListe = manifest.dates[dateSel.value];
+  heureInput.min = 0; heureInput.max = pasListe.length - 1;
+  const quinze = pasListe.indexOf("15:00");
+  heureInput.value = quinze >= 0 ? quinze : Math.floor(pasListe.length / 2);
+  heureAff.textContent = pasListe[heureInput.value];
+}
+majDate();
+
+let kActuel = 0, points = [], calculEnCours = 0;
+
+const [lonMin, latMin, lonMax, latMax] = manifest.bbox_wgs84;
+const map = new maplibregl.Map({
+  container: "map",
+  style: { version: 8, sources: { osm: { type: "raster",
+    tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], tileSize: 256,
+    attribution: "&copy; OpenStreetMap contributors" } },
+    layers: [{ id: "osm", type: "raster", source: "osm" }] },
+  bounds: [[lonMin, latMin], [lonMax, latMax]], fitBoundsOptions: { padding: 30 },
+});
+
+const couleurTrottoir = ["case", ["get", "indetermine"], "#9e9e9e",
+  ["interpolate", ["linear"], ["coalesce", ["get", "fraction_ombre"], 0], 0, "#f0a202", 1, "#1565c0"]];
+const couleurClasse = ["match", ["get", "classe"],
+  "ombre", "#0b3d91", "soleil", "#e65100", "indetermine", "#616161", "#6a1b9a"];
+
+map.on("load", async () => {
+  map.addSource("trottoirs", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+  map.addLayer({ id: "trottoirs", type: "line", source: "trottoirs",
+    paint: { "line-color": couleurTrottoir, "line-width": 2.5 } });
+  map.addSource("route", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+  map.addLayer({ id: "route-casing", type: "line", source: "route",
+    layout: { "line-cap": "round", "line-join": "round" },
+    paint: { "line-color": "#fff", "line-width": 9, "line-opacity": .9 } });
+  map.addLayer({ id: "route-marche", type: "line", source: "route",
+    filter: ["!", ["in", ["get", "classe"], ["literal", ["traversee", "liaison"]]]],
+    layout: { "line-cap": "round", "line-join": "round" },
+    paint: { "line-color": couleurClasse, "line-width": 5 } });
+  map.addLayer({ id: "route-traversee", type: "line", source: "route",
+    filter: ["in", ["get", "classe"], ["literal", ["traversee", "liaison"]]],
+    paint: { "line-color": "#6a1b9a", "line-width": 4, "line-dasharray": [1, 1.2] } });
+  map.addSource("points", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+  map.addLayer({ id: "points", type: "circle", source: "points",
+    paint: { "circle-radius": 8, "circle-color": ["match", ["get", "role"], "depart", "#00695c", "#6a1b9a"],
+      "circle-stroke-width": 2.5, "circle-stroke-color": "#fff" } });
+  map.on("click", (e) => poserPoint([e.lngLat.lng, e.lngLat.lat]));
+  await majTrottoirs();
+  statutEl.textContent = "Touchez la carte : depart, puis arrivee (ou \u{1F4CD} pour partir d'ici).";
+});
+
+async function majTrottoirs() {
+  await moteur.chargeOmbres(dateSel.value);
+  map.getSource("trottoirs").setData(moteur.trottoirsGeoJSON(dateSel.value, pasListe[heureInput.value]));
+}
+
+function majPoints() {
+  map.getSource("points").setData({ type: "FeatureCollection", features: points.map((p, i) => ({
+    type: "Feature", geometry: { type: "Point", coordinates: p },
+    properties: { role: i === 0 ? "depart" : "arrivee" } })) });
+}
+
+function poserPoint(coord) {
+  if (points.length >= 2) effacer(false);
+  points.push(coord);
+  majPoints();
+  if (points.length === 1) { statutEl.textContent = "Depart pose. Touchez l'arrivee."; return; }
+  calculer();
+}
+
+function effacer(toutEffacerUI = true) {
+  points = [];
+  majPoints();
+  map.getSource("route").setData({ type: "FeatureCollection", features: [] });
+  instructionsEl.innerHTML = "";
+  if (toutEffacerUI) statutEl.textContent = "Touchez la carte : depart, puis arrivee.";
+}
+
+async function calculer() {
+  if (points.length !== 2) return;
+  const id = ++calculEnCours;
+  statutEl.textContent = "Calcul...";
+  const r = await moteur.route({
+    depart: points[0], arrivee: points[1], k: kActuel,
+    date: dateSel.value, heure: pasListe[heureInput.value], chargerToutes: true,
+  });
+  if (id !== calculEnCours) return;
+  if (!r.reachable) { statutEl.textContent = r.message; return; }
+  const { troncons, instructions } = moteur.detaillerTrace(r, points[0], points[1]);
+  map.getSource("route").setData({ type: "FeatureCollection", features: troncons.map((t) => ({
+    type: "Feature", geometry: { type: "LineString", coordinates: t.coords }, properties: { classe: t.classe } })) });
+  const pct = r.fraction_ombre_trajet === null ? "?" : Math.round(r.fraction_ombre_trajet * 100);
+  let detour = "";
+  if (r.k_demande > 0) {
+    detour = `, +${Math.round((r.ratio_detour - 1) * 100)} % vs direct`;
+    if (r.plafonne) detour += ` (plafonne, k=${r.k_effectif})`;
+  }
+  statutEl.className = "";
+  statutEl.textContent = `${Math.round(r.distance_m)} m, ${pct} % a l'ombre${detour} (a ${r.heure}, ${r.nb_traversees} traversees).`;
+  instructionsEl.innerHTML = "";
+  for (const inst of instructions) {
+    const li = document.createElement("li");
+    let t = inst.texte;
+    if (inst.type === "marche") {
+      t += ` - ${inst.distance_m} m`;
+      if (inst.pct_ombre !== null) t += `, ${inst.pct_ombre} % ombre`;
+      const m = [];
+      if (inst.indetermine) m.push("passage couvert en partie");
+      if (inst.confiance_faible) m.push("fiabilite faible");
+      if (m.length) t += ` (${m.join(", ")})`;
+    } else li.className = "traversee";
+    li.textContent = t;
+    instructionsEl.appendChild(li);
+  }
+}
+
+document.querySelectorAll("#ligne2 button[data-k]").forEach((b) => b.addEventListener("click", () => {
+  kActuel = parseFloat(b.dataset.k);
+  document.querySelectorAll("#ligne2 button[data-k]").forEach((x) => x.classList.toggle("actif", x === b));
+  calculer();
+}));
+$("btn-effacer").addEventListener("click", () => effacer());
+$("btn-geoloc").addEventListener("click", () => {
+  if (!navigator.geolocation) { statutEl.textContent = "Geolocalisation indisponible."; return; }
+  statutEl.textContent = "Recherche de votre position...";
+  navigator.geolocation.getCurrentPosition((pos) => {
+    const c = [pos.coords.longitude, pos.coords.latitude];
+    const marge = 0.01; // ~1 km : hors perimetre demonstrateur -> message clair
+    if (c[0] < lonMin - marge || c[0] > lonMax + marge || c[1] < latMin - marge || c[1] > latMax + marge) {
+      statutEl.textContent = "Vous etes hors du perimetre couvert (Marais) - touchez la carte a la place.";
+      return;
+    }
+    effacer(false);
+    poserPoint(c);
+    map.flyTo({ center: c, zoom: 15.5 });
+    statutEl.textContent = "Depart = votre position. Touchez l'arrivee.";
+  }, () => { statutEl.textContent = "Position refusee ou indisponible - touchez la carte."; },
+  { enableHighAccuracy: true, timeout: 8000 });
+});
+heureInput.addEventListener("input", () => { heureAff.textContent = pasListe[heureInput.value]; });
+heureInput.addEventListener("change", async () => { await majTrottoirs(); calculer(); });
+dateSel.addEventListener("change", async () => { majDate(); await majTrottoirs(); calculer(); });
+</script>
+</body>
+</html>

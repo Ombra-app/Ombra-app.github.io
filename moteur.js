@@ -90,6 +90,7 @@ export class MoteurOmbra {
     this.chargeurTuile = chargeurTuile;
     this.chargeurOmbres = chargeurOmbres;
     this.noeuds = new Map();        // id -> [x, y] L93
+    this.noeudsWgs = new Map();     // id -> [lon, lat] (pour le rendu)
     this.adj = new Map();           // id -> Map(voisin -> arete)
     this.segments = new Map();      // i global -> {a, b, l, geomL93, longsCumulees, rue, cote}
     this.ombres = new Map();        // "date" -> {pas: [...], v: Map(i -> Uint8Array)}
@@ -111,7 +112,9 @@ export class MoteurOmbra {
     for (const id of nouvelles) {
       const t = await this.chargeurTuile(id);
       this.tuilesChargees.add(id);
-      for (const [nid, lon, lat] of t.noeuds) if (!this.noeuds.has(nid)) this.noeuds.set(nid, wgs84VersL93(lon, lat));
+      for (const [nid, lon, lat] of t.noeuds) {
+        if (!this.noeuds.has(nid)) { this.noeuds.set(nid, wgs84VersL93(lon, lat)); this.noeudsWgs.set(nid, [lon, lat]); }
+      }
       for (const s of t.segments) {
         const geomL93 = s.geom.map(([lon, lat]) => wgs84VersL93(lon, lat));
         const longs = [0];
@@ -158,13 +161,24 @@ export class MoteurOmbra {
     const pasListe = this.manifest.dates[date];
     if (!pasListe) throw new Error(`date non exportee : ${date}`);
     const v = new Map();
+    const conf = new Map();
     for (const id of this.tuilesChargees) {
       const o = await this.chargeurOmbres(date, id);
       const brut = Uint8Array.from(atob(o.v), (c) => c.charCodeAt(0));
+      const confPack = Uint8Array.from(atob(o.conf), (c) => c.charCodeAt(0));
       const nPas = o.pas.length;
-      o.seg.forEach((i, p) => v.set(i, brut.subarray(p * nPas, (p + 1) * nPas)));
+      o.seg.forEach((i, p) => {
+        v.set(i, brut.subarray(p * nPas, (p + 1) * nPas));
+        // Depaquetage du bitset confiance (np.packbits : gros bits d'abord).
+        const bits = new Uint8Array(nPas);
+        for (let j = 0; j < nPas; j++) {
+          const idx = p * nPas + j;
+          bits[j] = (confPack[idx >> 3] >> (7 - (idx & 7))) & 1;
+        }
+        conf.set(i, bits);
+      });
     }
-    this.ombres.set(date, { pas: pasListe, v });
+    this.ombres.set(date, { pas: pasListe, v, conf });
   }
 
   _fractionSoleil(date, indexPas, arete) {
@@ -256,7 +270,7 @@ export class MoteurOmbra {
     // Remontee du chemin + statistiques reelles (memes definitions que Python).
     const aretes = [];
     let n = ARRIVEE;
-    while (n !== DEPART) { const [prec, arete] = precedent.get(n); aretes.push({ arete }); n = prec; }
+    while (n !== DEPART) { const [prec, arete] = precedent.get(n); aretes.push({ de: prec, vers: n, arete }); n = prec; }
     aretes.reverse();
     let distance = 0, cout = 0, ombre = 0, soleil = 0, nonEvaluee = 0, traversees = 0;
     for (const { arete } of aretes) {
@@ -314,5 +328,86 @@ export class MoteurOmbra {
       k_demande: k, k_effectif: kEffectif, plafonne,
       heure: arrondie, date,
     };
+  }
+
+  /** Trace par troncon (classes ombre/soleil/indetermine/traversee) +
+   * instructions lisibles - MIROIR de la logique de /api/route (phase 2,
+   * palier 6) : groupes par (rue, cote boussole), traversees intercalees,
+   * marqueurs "couvert" et "fiabilite faible". Pour le rendu uniquement. */
+  detaillerTrace(resultat, departWgs, arriveeWgs) {
+    const o = this.ombres.get(resultat.date);
+    const indexPas = o.pas.indexOf(resultat.heure);
+    const troncons = [];
+    const instructions = [];
+    let groupe = null, reportLiaison = 0;
+    const clore = () => {
+      if (!groupe) return;
+      const evaluee = groupe.dOmbre + groupe.dSoleil;
+      instructions.push({
+        type: "marche",
+        texte: (groupe.rue || "trottoir sans nom") + (groupe.cote ? `, cote ${groupe.cote}` : ""),
+        distance_m: Math.round(groupe.distance),
+        pct_ombre: evaluee > 0 ? Math.round(100 * groupe.dOmbre / evaluee) : null,
+        indetermine: groupe.indetermine, confiance_faible: groupe.faible,
+      });
+      groupe = null;
+    };
+    for (const { de, vers, arete } of resultat.aretes) {
+      if (arete.type === "trottoir") {
+        const s = this.segments.get(arete.i);
+        const val = o.v.get(arete.i)[indexPas];
+        const faible = o.conf.get(arete.i)[indexPas] === 1;
+        const indet = val === 255;
+        const classe = indet ? "indetermine" : (val >= 50 ? "ombre" : "soleil");
+        troncons.push({ classe, coords: s.geom, confiance_faible: faible });
+        const cle = `${s.rue}|${s.cote}`;
+        if (!groupe || groupe.cle !== cle) { clore(); groupe = { cle, rue: s.rue, cote: s.cote, distance: reportLiaison, dOmbre: 0, dSoleil: 0, indetermine: false, faible: false }; reportLiaison = 0; }
+        groupe.distance += arete.l;
+        if (indet) groupe.indetermine = true;
+        else { groupe.dOmbre += arete.l * (val / 100); groupe.dSoleil += arete.l * (1 - val / 100); }
+        if (faible) groupe.faible = true;
+      } else if (arete.type === "traversee") {
+        clore();
+        troncons.push({ classe: "traversee", coords: [this.noeudsWgs.get(de), this.noeudsWgs.get(vers)] });
+        instructions.push({
+          type: "traversee",
+          texte: arete.src === "osm_crossing" ? "Traverser au passage pieton" : "Traverser au carrefour",
+          distance_m: Math.round(arete.l), pct_ombre: null, indetermine: false, confiance_faible: false,
+        });
+      } else { // attache virtuelle depart/arrivee
+        const p1 = typeof de === "string" ? (de === "virtuel_depart" ? departWgs : arriveeWgs) : this.noeudsWgs.get(de);
+        const p2 = typeof vers === "string" ? (vers === "virtuel_depart" ? departWgs : arriveeWgs) : this.noeudsWgs.get(vers);
+        troncons.push({ classe: "liaison", coords: [p1, p2] });
+        if (groupe) groupe.distance += arete.l; else reportLiaison += arete.l;
+      }
+    }
+    clore();
+    if (reportLiaison > 0 && instructions.length) instructions[instructions.length - 1].distance_m += Math.round(reportLiaison);
+    return { troncons, instructions };
+  }
+
+  /** Trottoirs colores pour l'affichage (GeoJSON), depuis les tuiles
+   * chargees et les valeurs d'ombre de l'instant. Remplace la couche
+   * /api/sidewalks de la version Mac (les polygones d'ombre, non exportes,
+   * ne sont pas affiches dans la PWA - limite documentee). */
+  trottoirsGeoJSON(date, heureArrondie) {
+    const o = this.ombres.get(date);
+    const indexPas = o.pas.indexOf(heureArrondie);
+    const features = [];
+    for (const s of this.segments.values()) {
+      const arr = o.v.get(s.i);
+      if (!arr) continue;
+      const val = arr[indexPas];
+      features.push({
+        type: "Feature",
+        geometry: { type: "LineString", coordinates: s.geom },
+        properties: {
+          fraction_ombre: val === 255 ? null : val / 100,
+          indetermine: val === 255,
+          confiance_faible: o.conf.get(s.i)[indexPas] === 1,
+        },
+      });
+    }
+    return { type: "FeatureCollection", features };
   }
 }
