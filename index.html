@@ -209,7 +209,7 @@ $("btn-geoloc").addEventListener("click", () => {
     const c = [pos.coords.longitude, pos.coords.latitude];
     const marge = 0.01; // ~1 km : hors perimetre demonstrateur -> message clair
     if (c[0] < lonMin - marge || c[0] > lonMax + marge || c[1] < latMin - marge || c[1] > latMax + marge) {
-      statutEl.textContent = "Vous etes hors du perimetre couvert (Marais) - touchez la carte a la place.";
+      statutEl.textContent = "Vous etes hors du perimetre couvert (" + manifest.perimetre + ") - touchez la carte a la place.";
       return;
     }
     effacer(false);
