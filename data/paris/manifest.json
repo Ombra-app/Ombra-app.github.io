@@ -1,18 +1,18 @@
 {
  "format_version": 1,
  "ville": "paris",
- "perimetre": "demonstrateur Pornic hypercentre (test geoloc)",
+ "perimetre": "demonstrateur Marais (Paris 3e-4e)",
  "crs": "WGS84 (EPSG:4326)",
  "bbox_wgs84": [
-  -2.108823,
-  47.112285,
-  -2.091247,
-  47.121083
+  2.342792,
+  48.841259,
+  2.379204,
+  48.865891
  ],
  "taille_tuile_m": 1000.0,
  "pas_minutes": 15,
- "n_segments": 247,
- "n_traversees": 31,
+ "n_segments": 31118,
+ "n_traversees": 8402,
  "dates": {
   "2026-08-29": [
    "07:00",
@@ -76,34 +76,82 @@
  },
  "tuiles": [
   {
-   "id": "312_6680",
-   "n_segments": 3,
-   "n_noeuds": 4,
+   "id": "651_6860",
+   "n_segments": 256,
+   "n_noeuds": 228,
+   "n_traversees": 33
+  },
+  {
+   "id": "651_6861",
+   "n_segments": 1174,
+   "n_noeuds": 1075,
+   "n_traversees": 228
+  },
+  {
+   "id": "651_6862",
+   "n_segments": 500,
+   "n_noeuds": 531,
+   "n_traversees": 198
+  },
+  {
+   "id": "652_6860",
+   "n_segments": 796,
+   "n_noeuds": 797,
+   "n_traversees": 169
+  },
+  {
+   "id": "652_6861",
+   "n_segments": 6780,
+   "n_noeuds": 5998,
+   "n_traversees": 1964
+  },
+  {
+   "id": "652_6862",
+   "n_segments": 7140,
+   "n_noeuds": 6075,
+   "n_traversees": 1731
+  },
+  {
+   "id": "653_6860",
+   "n_segments": 810,
+   "n_noeuds": 826,
+   "n_traversees": 195
+  },
+  {
+   "id": "653_6861",
+   "n_segments": 4293,
+   "n_noeuds": 4353,
+   "n_traversees": 1452
+  },
+  {
+   "id": "653_6862",
+   "n_segments": 6409,
+   "n_noeuds": 5579,
+   "n_traversees": 1618
+  },
+  {
+   "id": "653_6863",
+   "n_segments": 28,
+   "n_noeuds": 32,
    "n_traversees": 0
   },
   {
-   "id": "313_6680",
-   "n_segments": 124,
-   "n_noeuds": 131,
-   "n_traversees": 11
+   "id": "654_6860",
+   "n_segments": 318,
+   "n_noeuds": 350,
+   "n_traversees": 119
   },
   {
-   "id": "313_6681",
-   "n_segments": 77,
-   "n_noeuds": 84,
-   "n_traversees": 14
+   "id": "654_6861",
+   "n_segments": 1319,
+   "n_noeuds": 1372,
+   "n_traversees": 455
   },
   {
-   "id": "314_6680",
-   "n_segments": 13,
-   "n_noeuds": 15,
-   "n_traversees": 1
-  },
-  {
-   "id": "314_6681",
-   "n_segments": 30,
-   "n_noeuds": 33,
-   "n_traversees": 5
+   "id": "654_6862",
+   "n_segments": 1295,
+   "n_noeuds": 1241,
+   "n_traversees": 240
   }
  ],
  "conventions": {
