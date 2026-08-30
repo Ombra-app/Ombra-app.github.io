@@ -34,6 +34,24 @@ const moteur = new MoteurOmbra(
 const TOL_M = 0.6, TOL_COUT = 0.8, TOL_RATIO = 0.001;
 let echecs = 0, total = 0, coOptimaux = 0;
 
+// Garde-fou : des fixtures portant sur une date absente de l'export rendent le
+// test INEXECUTABLE, ce qui est pire qu'un echec (panne silencieuse constatee le
+// 2026-08-30). On le dit en clair plutot que de laisser remonter une exception
+// technique depuis le moteur.
+{
+  const datesFixtures = [...new Set(fixtures.cas.map((c) => c.date))];
+  const manquantes = datesFixtures.filter((d) => !manifest.dates[d]);
+  if (manquantes.length) {
+    console.error(
+      `ECHEC : les fixtures portent sur ${manquantes.join(", ")}, absente(s) de l'export ` +
+      `(dates disponibles : ${Object.keys(manifest.dates).join(", ")}).\n` +
+      "Le test de parite ne peut pas s'executer : le filet de securite est LEVE.\n" +
+      "Regenerer les fixtures : PYTHONPATH=src .venv/bin/python scripts/genere_fixtures_parite.py",
+    );
+    process.exit(1);
+  }
+}
+
 for (const cas of fixtures.cas) {
   total += 1;
   const r = await moteur.route({
