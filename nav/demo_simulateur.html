@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ombra - simulateur de trace GPS</title>
+<script src="../vendor/maplibre-gl.js"></script>
+<link href="../vendor/maplibre-gl.css" rel="stylesheet">
+<style>
+  html,body{margin:0;height:100%;font:14px/1.4 system-ui,-apple-system,sans-serif}
+  #map{position:absolute;inset:0}
+  .panneau{position:absolute;left:8px;right:8px;background:#fff;border-radius:10px;
+           box-shadow:0 2px 12px rgba(0,0,0,.18);padding:8px 10px;z-index:2}
+  #haut{top:8px} #bas{bottom:8px}
+  label{margin-right:12px;white-space:nowrap}
+  button{font:inherit;padding:6px 12px;border:1px solid #ccc;border-radius:8px;background:#f7f7f7;cursor:pointer}
+  button.actif{background:#5b21b6;color:#fff;border-color:#5b21b6}
+  #etat{font-size:13px;color:#333;margin-top:6px}
+  b{font-variant-numeric:tabular-nums}
+</style></head><body>
+<div id="map"></div>
+<div class="panneau" id="haut">
+  <label>Bruit GPS
+    <select id="bruit"><option value="0">0 m</option><option value="5">5 m</option>
+      <option value="15" selected>15 m</option><option value="30">30 m</option></select></label>
+  <label>Ecart
+    <select id="ecart"><option value="0">aucun</option>
+      <option value="1" selected>200 m, 60 m a droite</option></select></label>
+  <label>Vitesse <select id="vitesse">
+      <option value="1">reel</option><option value="10">x10</option>
+      <option value="40" selected>x40</option></select></label>
+  <button id="go">Demarrer</button>
+  <div id="etat">Chargement du modele...</div>
+</div>
+<div class="panneau" id="bas"><div id="mesure">&nbsp;</div></div>
+
+<script type="module">
+import { MoteurOmbra, wgs84VersL93 } from "../moteur.js";
+import { SourceSimulee, prepareTrace } from "./source_position.js";
+import { traceItineraire } from "./trace.js";
+
+const $ = (id) => document.getElementById(id);
+const etat = $("etat"), mesure = $("mesure");
+const lis = async (u) => (await fetch(u)).json();
+
+const manifest = await lis("../data/paris/manifest.json");
+const moteur = new MoteurOmbra(manifest,
+  (id) => lis(`../data/paris/tuiles/${id}.json`),
+  (d, id) => lis(`../data/paris/ombres/${d}/${id}.json`));
+
+const DATE = Object.keys(manifest.dates).sort().pop();
+const HEURE = manifest.dates[DATE].includes("15:00") ? "15:00" : manifest.dates[DATE][0];
+const depart = [2.3625, 48.8590], arrivee = [2.3535, 48.8555];
+
+const res = await moteur.route({ depart, arrivee, k: 4, date: DATE, heure: HEURE, chargerToutes: true });
+const points = traceItineraire(moteur, res, depart, arrivee);
+const trace = prepareTrace(points);
+etat.textContent = `Itineraire ${Math.round(res.distance_m)} m, trace ${Math.round(trace.longueur)} m. Pret.`;
+
+// Piege documente (ETAT.md) : une carte MapLibre creee dans un onglet MASQUE
+// ne s'initialise jamais (WebGL ne rend pas hors ecran) et l'ecran reste blanc,
+// sans la moindre erreur en console. On attend donc que l'onglet soit visible.
+if (document.visibilityState === "hidden") {
+  etat.textContent = "Onglet en arriere-plan : la carte s'initialisera a l'affichage.";
+  await new Promise((r) => document.addEventListener("visibilitychange", function f() {
+    if (document.visibilityState === "visible") { document.removeEventListener("visibilitychange", f); r(); }
+  }));
+  etat.textContent = `Itineraire ${Math.round(res.distance_m)} m, trace ${Math.round(trace.longueur)} m. Pret.`;
+}
+
+const bb = points.reduce((a, [x, y]) => [Math.min(a[0],x),Math.min(a[1],y),Math.max(a[2],x),Math.max(a[3],y)],
+                         [180,90,-180,-90]);
+// Les limites se passent au CONSTRUCTEUR : un fitBounds appele avant le
+// chargement du style laisse la carte sans camera et l'ecran reste blanc
+// (constate le 2026-08-30).
+const map = new maplibregl.Map({
+  container: "map", attributionControl: false,
+  style: { version: 8, sources: { osm: { type: "raster", tileSize: 256,
+    tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+    attribution: "&copy; OpenStreetMap contributors" } },
+    layers: [{ id: "osm", type: "raster", source: "osm" }] },
+  bounds: [[bb[0], bb[1]], [bb[2], bb[3]]], fitBoundsOptions: { padding: 90 },
+});
+
+window._map = map;   // piege connu (ETAT.md) : `map` n'est pas globale dans un module
+const vide = { type: "FeatureCollection", features: [] };
+map.on("load", () => {
+  map.addSource("trace", { type: "geojson", data: { type: "Feature",
+    geometry: { type: "LineString", coordinates: points } } });
+  map.addLayer({ id: "trace-casing", type: "line", source: "trace",
+    paint: { "line-color": "#fff", "line-width": 9 } });
+  map.addLayer({ id: "trace", type: "line", source: "trace",
+    paint: { "line-color": "#0b3d91", "line-width": 5 } });
+
+  map.addSource("brut", { type: "geojson", data: vide });
+  map.addLayer({ id: "brut", type: "circle", source: "brut",
+    paint: { "circle-radius": 2.5, "circle-color": "#e11d48", "circle-opacity": .55 } });
+
+  map.addSource("pos", { type: "geojson", data: vide });
+  map.addLayer({ id: "pos-halo", type: "circle", source: "pos",
+    paint: { "circle-radius": ["get","r"], "circle-color": "#2563eb", "circle-opacity": .16 } });
+  map.addLayer({ id: "pos", type: "circle", source: "pos",
+    paint: { "circle-radius": 7, "circle-color": "#2563eb",
+             "circle-stroke-width": 2.5, "circle-stroke-color": "#fff" } });
+});
+
+const l93 = points.map(([a,b]) => wgs84VersL93(a,b));
+function distanceATrace(lon, lat) {
+  const [px,py] = wgs84VersL93(lon,lat);
+  let best = Infinity;
+  for (let i=1;i<l93.length;i++){
+    const [x1,y1]=l93[i-1],[x2,y2]=l93[i];
+    const dx=x2-x1,dy=y2-y1,L2=dx*dx+dy*dy;
+    const t=L2>0?Math.max(0,Math.min(1,((px-x1)*dx+(py-y1)*dy)/L2)):0;
+    const d=Math.hypot(px-(x1+t*dx),py-(y1+t*dy));
+    if(d<best) best=d;
+  }
+  return best;
+}
+
+let source = null, brut = [];
+$("go").onclick = () => {
+  if (source) { source.arreter(); source = null; $("go").textContent = "Demarrer"; $("go").classList.remove("actif"); return; }
+  brut = [];
+  const bruit = Number($("bruit").value);
+  const ecarts = $("ecart").value === "1" ? [{ a_m: 200, longueur_m: 60, cap_relatif_deg: 90 }] : [];
+  source = new SourceSimulee({ points, bruit_m: bruit, graine: 42, ecarts,
+                               facteurTemps: Number($("vitesse").value) });
+  $("go").textContent = "Arreter"; $("go").classList.add("actif");
+  const t0 = performance.now();
+  source.demarrer((p) => {
+    brut.push([p.lon, p.lat]);
+    if (brut.length > 400) brut.shift();
+    map.getSource("brut").setData({ type:"FeatureCollection",
+      features: brut.map((c)=>({ type:"Feature", geometry:{type:"Point",coordinates:c} })) });
+    map.getSource("pos").setData({ type:"FeatureCollection", features:[{ type:"Feature",
+      geometry:{type:"Point",coordinates:[p.lon,p.lat]}, properties:{ r: Math.max(10, p.precision_m*1.1) } }] });
+    const d = distanceATrace(p.lon, p.lat);
+    mesure.innerHTML = `t = <b>${(p.t/1000).toFixed(0)} s</b> &nbsp; ecart a la trace = <b>${d.toFixed(1)} m</b>`
+      + ` &nbsp; (bruit ${bruit} m, rejeu x${$("vitesse").value}, ${((performance.now()-t0)/1000).toFixed(0)} s ecoulees)`;
+  });
+};
+</script></body></html>
