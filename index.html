@@ -32,6 +32,13 @@
   #bas { bottom: max(8px, env(safe-area-inset-bottom)); padding: 8px 12px; max-height: 34vh; overflow-y: auto; }
   #statut { font-size: 13px; color: #222; }
   #statut.info { color: #555; }
+  /* Indicateur de chargement : le modele pese ~1,5 Mo gzip et prend plusieurs
+     secondes sur reseau mobile. Sans retour visuel, l'utilisateur croit que
+     l'application est cassee et ferme avant la fin. */
+  #barre { margin-top: 6px; height: 4px; border-radius: 2px; background: #e3e6ea; overflow: hidden; }
+  #barre > i { display: block; height: 100%; width: 0%; border-radius: 2px;
+               background: #1565c0; transition: width .18s ease-out; }
+  #barre[hidden] { display: none; }
   #instructions { font-size: 12px; line-height: 1.5; margin: 6px 0 0; padding-left: 18px; }
   #instructions .traversee { color: #6a1b9a; }
 </style>
@@ -55,6 +62,7 @@
 </div>
 <div class="panneau" id="bas">
   <div id="statut" class="info">Chargement du modele...</div>
+  <div id="barre"><i></i></div>
   <ol id="instructions"></ol>
 </div>
 <script type="module">
@@ -66,10 +74,31 @@ const dateSel = $("date"), heureInput = $("heure"), heureAff = $("heure-affichee
 
 const lisJson = async (u) => { const r = await fetch(u); if (!r.ok) throw new Error(`${u}: ${r.status}`); return r.json(); };
 const manifest = await lisJson("data/paris/manifest.json");
+
+// Progression du premier chargement. Le comptage se fait en enveloppant les
+// deux chargeurs passes au moteur : aucune modification de moteur.js, donc
+// aucun risque pour la parite Python/JS.
+const barreEl = $("barre"), barreJauge = barreEl.firstElementChild;
+const CHARGES_ATTENDUS = manifest.tuiles.length * 2;   // tuiles + ombres du jour
+let chargesFaits = 0;
+function majProgres() {
+  const pct = Math.min(100, Math.round((100 * chargesFaits) / CHARGES_ATTENDUS));
+  statutEl.textContent = `Chargement du modele... ${pct} %`;
+  barreJauge.style.width = pct + "%";
+}
+function finProgres() { barreEl.hidden = true; }
+const suivi = (f) => async (...args) => {
+  const r = await f(...args);
+  chargesFaits += 1;
+  majProgres();
+  return r;
+};
+majProgres();
+
 const moteur = new MoteurOmbra(
   manifest,
-  (id) => lisJson(`data/paris/tuiles/${id}.json`),
-  (date, id) => lisJson(`data/paris/ombres/${date}/${id}.json`),
+  suivi((id) => lisJson(`data/paris/tuiles/${id}.json`)),
+  suivi((date, id) => lisJson(`data/paris/ombres/${date}/${id}.json`)),
 );
 
 // Perimetre demonstrateur : on charge tout d'emblee (1,6 Mo gzip). A
@@ -128,6 +157,7 @@ map.on("load", async () => {
       "circle-stroke-width": 2.5, "circle-stroke-color": "#fff" } });
   map.on("click", (e) => poserPoint([e.lngLat.lng, e.lngLat.lat]));
   await majTrottoirs();
+  finProgres();
   statutEl.textContent = "Touchez la carte : depart, puis arrivee (ou \u{1F4CD} pour partir d'ici).";
 });
 
