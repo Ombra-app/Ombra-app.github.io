@@ -227,7 +227,10 @@ const libelleDate = (iso) => {
 };
 const dates = Object.keys(manifest.dates);
 for (const d of dates) { const o = document.createElement("option"); o.value = d; o.textContent = libelleDate(d); dateSel.appendChild(o); }
-dateSel.value = dates[dates.length - 1];
+// Date du jour (heure locale de l'appareil) si elle est exportee, sinon la derniere date exportee.
+const maintenant = new Date();
+const aujourdhui = `${maintenant.getFullYear()}-${String(maintenant.getMonth() + 1).padStart(2, "0")}-${String(maintenant.getDate()).padStart(2, "0")}`;
+dateSel.value = dates.includes(aujourdhui) ? aujourdhui : dates[dates.length - 1];
 
 let pasListe = [];
 function majHeureAff() {
