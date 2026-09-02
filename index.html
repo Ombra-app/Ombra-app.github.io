@@ -16,6 +16,18 @@
      Cormorant Garamond italic + Jost), ecran de chargement, legende, panneau
      resultat replie/deplie, attenuation des trottoirs quand un trajet est
      affiche. Aucune modification de moteur.js. -->
+<!-- Mesure d'audience : GoatCounter (sans cookie, sans donnee personnelle).
+     Le script est charge en asynchrone et echoue en silence hors ligne. Le code
+     du site est dans GOATCOUNTER_CODE ci-dessous ; vide = aucune mesure. -->
+<script>window.GOATCOUNTER_CODE = "ombra";</script>
+<script>
+  if (window.GOATCOUNTER_CODE) {
+    const s = document.createElement("script");
+    s.async = true; s.src = "https://gc.zgo.at/count.js";
+    s.dataset.goatcounter = `https://${window.GOATCOUNTER_CODE}.goatcounter.com/count`;
+    document.head.appendChild(s);
+  }
+</script>
 <script src="vendor/maplibre-gl.js"></script>
 <link href="vendor/maplibre-gl.css" rel="stylesheet">
 <style>
@@ -180,6 +192,11 @@ const dateSel = $("date"), heureInput = $("heure"), heureAff = $("heure-affichee
 const basEl = $("bas"), legendeEl = $("legende"), legendeHeure = $("legende-heure");
 const MSG_INVITE = "Touchez la carte : départ, puis arrivée — ou le bouton ◎ pour partir de votre position.";
 
+// Evenement de mesure (GoatCounter). Ne fait rien si le compteur n'est pas charge.
+function mesure(nom) {
+  try { if (window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path: nom, title: nom, event: true }); } catch {}
+}
+
 // Hauteur reelle du bandeau -> position de la legende et de l'attribution.
 const majHautH = () => document.documentElement.style.setProperty("--haut-h", $("haut").offsetHeight + "px");
 new ResizeObserver(majHautH).observe($("haut"));
@@ -227,10 +244,12 @@ const libelleDate = (iso) => {
 };
 const dates = Object.keys(manifest.dates);
 for (const d of dates) { const o = document.createElement("option"); o.value = d; o.textContent = libelleDate(d); dateSel.appendChild(o); }
-// Date du jour (heure locale de l'appareil) si elle est exportee, sinon la derniere date exportee.
+// Date du jour (heure locale de l'appareil) si elle est exportee ; sinon la
+// premiere date a venir (un visiteur de la veille voit le lendemain, pas le
+// dernier jour) ; sinon la derniere date exportee.
 const maintenant = new Date();
 const aujourdhui = `${maintenant.getFullYear()}-${String(maintenant.getMonth() + 1).padStart(2, "0")}-${String(maintenant.getDate()).padStart(2, "0")}`;
-dateSel.value = dates.includes(aujourdhui) ? aujourdhui : dates[dates.length - 1];
+dateSel.value = dates.includes(aujourdhui) ? aujourdhui : (dates.find((d) => d > aujourdhui) ?? dates[dates.length - 1]);
 
 let pasListe = [];
 function majHeureAff() {
@@ -396,6 +415,7 @@ async function calculer() {
   });
   if (id !== calculEnCours) return;
   if (!r.reachable) { montrerStatut(r.message); return; }
+  mesure("itineraire-calcule");
   const { troncons, instructions } = moteur.detaillerTrace(r, points[0], points[1]);
   map.getSource("route").setData({ type: "FeatureCollection", features: troncons.map((t) => ({
     type: "Feature", geometry: { type: "LineString", coordinates: t.coords }, properties: { classe: t.classe } })) });
@@ -440,6 +460,7 @@ basEl.addEventListener("touchend", (e) => {
 
 document.querySelectorAll("#modes button[data-k]").forEach((b) => b.addEventListener("click", () => {
   kActuel = parseFloat(b.dataset.k);
+  if (kActuel === 4) mesure("mode-ombre-max");
   document.querySelectorAll("#modes button[data-k]").forEach((x) => x.classList.toggle("actif", x === b));
   calculer();
 }));
