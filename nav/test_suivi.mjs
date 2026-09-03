@@ -6,7 +6,7 @@
  * finale sous 20 m. Tout est rejouable a graine fixee.
  */
 import { readFileSync } from "node:fs";
-import { MoteurOmbra } from "../moteur.js";
+import { MoteurOmbra, wgs84VersL93 } from "../moteur.js";
 import { SourceSimulee, prepareTrace } from "./source_position.js";
 import { traceItineraire } from "./trace.js";
 import { SuiviProgression } from "./suivi.js";
@@ -120,20 +120,52 @@ for (const bruit of [5, 15, 30]) {
           Math.abs(fin.s - trace.longueur) < 25, `${fin.s.toFixed(1)} m`);
 }
 {
-  const src = new SourceSimulee({ points, bruit_m: 0, ecarts: [{ a_m: 900, longueur_m: 60, cap_relatif_deg: -90 }] });
+  // Le cas trompeur ne peut PAS etre epingle a une abscisse fixe : il depend de
+  // la geometrie du trajet, qui change avec la date et les donnees d'ombre.
+  // Premiere version du test (2026-08-30) figee a a_m=900 : elle est devenue
+  // rouge des que l'export a change de date. On CHERCHE donc le cas au lieu de
+  // le supposer, ce qui teste la propriete reelle et non une coincidence.
+  const l93 = points.map(([a, b]) => wgs84VersL93(a, b));
+  const distanceVraie = (lon, lat) => {
+    const [px, py] = wgs84VersL93(lon, lat);
+    let best = Infinity;
+    for (let i = 1; i < l93.length; i++) {
+      const [x1, y1] = l93[i - 1], [x2, y2] = l93[i];
+      const dx = x2 - x1, dy = y2 - y1, L2 = dx * dx + dy * dy;
+      const t = L2 > 0 ? Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / L2)) : 0;
+      const d = Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+      if (d < best) best = d;
+    }
+    return best;
+  };
+
+  let pire = null;
+  for (let a = 100; a <= trace.longueur - 100; a += 50) {
+    for (const cap of [90, -90]) {
+      const src = new SourceSimulee({ points, bruit_m: 0, ecarts: [{ a_m: a, longueur_m: 60, cap_relatif_deg: cap }] });
+      const dehors = src.positions().filter((p) => p._vrai.hors_trace);
+      if (!dehors.length) continue;
+      const loin = dehors.reduce((x, y) => (y._vrai.ecart_m > x._vrai.ecart_m ? y : x));
+      const d = distanceVraie(loin.lon, loin.lat);
+      if (!pire || d < pire.d) pire = { a, cap, d };
+    }
+  }
+  verifie("il existe des ecarts INVISIBLES a la distance (60 m de travers, < 30 m mesures)",
+          pire && pire.d < 30,
+          pire ? `pire cas : a=${pire.a} m cap ${pire.cap > 0 ? "+" : ""}${pire.cap}, `
+               + `le marcheur est a 60 m du chemin mais a ${pire.d.toFixed(1)} m de la trace`
+               : "aucun");
+
+  // Sur ce cas, le suivi ne doit pas se bloquer : il n'a aucun moyen de savoir.
+  const src = new SourceSimulee({ points, bruit_m: 0, ecarts: [{ a_m: pire.a, longueur_m: 60, cap_relatif_deg: pire.cap }] });
   const suivi = new SuiviProgression(trace);
-  const l = [];
+  let fin2 = null;
   for (const p of src.positions()) {
     const r = suivi.maj({ lon: p.lon, lat: p.lat, precision_m: p.precision_m, t: p.t });
-    l.push({ s: r.s, ecart_m: r.ecart_m, hors: p._vrai.hors_trace });
+    fin2 = r.s;
   }
-  const dehors = l.filter((x) => x.hors);
-  const ecartMax = Math.max(...dehors.map((x) => x.ecart_m));
-  verifie("ecart trompeur : l'eloignement reel est faible, comme prevu (< 30 m)",
-          ecartMax < 30, `${ecartMax.toFixed(1)} m alors que le marcheur est a 60 m du chemin`);
-  const fin = l[l.length - 1];
   verifie("ecart trompeur : le suivi termine quand meme le trajet",
-          Math.abs(fin.s - trace.longueur) < 30, `${fin.s.toFixed(1)} m`);
+          Math.abs(fin2 - trace.longueur) < 30, `${fin2.toFixed(1)} m sur ${trace.longueur.toFixed(1)} m`);
 }
 
 /* 5. La fenetre de recherche interdit le saut a l'autre bout du trajet :
