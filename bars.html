@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Ombra — Terrasses à l'ombre</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#070E1A">
+<meta name="description" content="Les bars du Marais dont le trottoir est à l'ombre, heure par heure, et le chemin le plus ombragé pour y aller.">
+<link rel="icon" href="icone-512.png">
+<link rel="apple-touch-icon" href="icone-180.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ombra">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://ombra-app.github.io/bars.html">
+<meta property="og:title" content="Terrasses à l'ombre — Ombra">
+<meta property="og:description" content="Les bars du Marais dont le trottoir est à l'ombre, heure par heure, et le chemin le plus ombragé pour y aller.">
+<meta property="og:image" content="https://ombra-app.github.io/partage-1200x630.png">
+<meta name="twitter:card" content="summary_large_image">
+<!-- Demonstrateur secondaire (2026-09-04). Meme moteur, memes donnees et meme
+     habillage que index.html : seuls changent les marqueurs de bars, le filtre
+     par biere et la liste. moteur.js est importe tel quel (parite Python/JS
+     intacte) ; aucune donnee nouvelle n'est calculee : l'ombre affichee pour un
+     bar est celle du segment de trottoir de son adresse, deja exporte.
+     Rattachement (cf. bench/bars/) : on cherche le trottoir PORTANT LE NOM DE
+     LA RUE DE L'ADRESSE dans un rayon de 30 m, pas le plus proche tout court -
+     un point OSM est au centre du batiment, et le trottoir d'en face ou celui
+     de la rue arriere n'a pas la meme ombre. Sans trottoir de la bonne rue
+     dans ce rayon, le bar N'EST PAS AFFICHE (jamais l'ombre d'une autre rue) :
+     c'est une limite du perimetre du demonstrateur, pas une information utile
+     au visiteur ; le nombre de bars ainsi ecartes est rappele au pied du
+     panneau. -->
+<script>window.GOATCOUNTER_CODE = "ombra";</script>
+<script>
+  if (window.GOATCOUNTER_CODE) {
+    const s = document.createElement("script");
+    s.async = true; s.src = "https://gc.zgo.at/count.js";
+    s.dataset.goatcounter = `https://${window.GOATCOUNTER_CODE}.goatcounter.com/count`;
+    document.head.appendChild(s);
+  }
+</script>
+<script src="vendor/maplibre-gl.js"></script>
+<link href="vendor/maplibre-gl.css" rel="stylesheet">
+<style>
+  @font-face { font-family: "Jost"; font-weight: 300; font-display: swap; src: url("vendor/fonts/jost-latin-300-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Jost"; font-weight: 400; font-display: swap; src: url("vendor/fonts/jost-latin-400-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Jost"; font-weight: 500; font-display: swap; src: url("vendor/fonts/jost-latin-500-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Cormorant Garamond"; font-weight: 500; font-style: italic; font-display: swap; src: url("vendor/fonts/cormorant-garamond-latin-500-italic.woff2") format("woff2"); }
+
+  :root {
+    --navy: #070E1A; --teal: #38BDF8; --cream: #F2EDE7;
+    --muted: rgba(242,237,231,.6); --line: rgba(242,237,231,.13); --fond-doux: rgba(242,237,231,.06);
+    --ombre: #1565c0; --soleil: #f0a202; --inconnu: #616161;
+    --serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+    --sans: "Jost", -apple-system, system-ui, sans-serif;
+    --haut-h: 180px;
+  }
+  html, body { margin: 0; height: 100%; font-family: var(--sans); font-weight: 300; color: var(--cream);
+    background: var(--navy); overscroll-behavior: none; -webkit-font-smoothing: antialiased; }
+  #map { position: absolute; inset: 0; background: #e9e6e0; }
+  button { font: inherit; color: inherit; }
+
+  /* ---------- Ecran de chargement ---------- */
+  #splash { position: fixed; inset: 0; z-index: 10; background: var(--navy); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center; padding: 0 24px; transition: opacity .5s ease; }
+  #splash.cache { opacity: 0; pointer-events: none; }
+  #splash img { width: 96px; height: 96px; border-radius: 22px; box-shadow: 0 8px 30px rgba(0,0,0,.5); }
+  #splash .marque { font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 46px; line-height: 1; margin-top: 26px; }
+  #splash .slogan { font-family: var(--serif); font-style: italic; font-size: 20px; color: var(--muted); margin-top: 6px; }
+  #splash .barre { width: 140px; height: 2px; border-radius: 1px; background: var(--line); margin-top: 44px; overflow: hidden; }
+  #splash .barre > i { display: block; height: 100%; width: 0%; background: var(--teal); transition: width .18s ease-out; }
+  #splash .etat { margin-top: 12px; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  #splash .pied { position: absolute; bottom: max(28px, env(safe-area-inset-bottom)); font-size: 9px; letter-spacing: .14em;
+    text-transform: uppercase; color: rgba(242,237,231,.35); }
+
+  /* ---------- Bandeau haut ---------- */
+  .panneau { position: absolute; z-index: 2; background: rgba(7,14,26,.96); box-shadow: 0 4px 18px rgba(0,0,0,.35); }
+  @supports (backdrop-filter: blur(1px)) { .panneau { background: rgba(7,14,26,.9); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); } }
+  #haut { top: 0; left: 0; right: 0; border-radius: 0 0 18px 18px; padding: calc(12px + env(safe-area-inset-top)) 16px 11px; }
+  #ligne1 { display: flex; align-items: baseline; gap: 10px; }
+  #marque { font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 24px; line-height: 1; }
+  #titre { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  #date-wrap { margin-left: auto; position: relative; }
+  #date { -webkit-appearance: none; appearance: none; background: transparent; color: var(--muted); border: 1px solid var(--line);
+    border-radius: 999px; padding: 4px 22px 4px 10px; font: 400 11.5px var(--sans); letter-spacing: .02em; }
+  #date-wrap::after { content: ""; position: absolute; right: 10px; top: 50%; width: 5px; height: 5px; margin-top: -4px;
+    border-right: 1px solid var(--muted); border-bottom: 1px solid var(--muted); transform: rotate(45deg); pointer-events: none; }
+  #heure-affichee { font-size: 22px; color: var(--teal); min-width: 56px; text-align: right; font-variant-numeric: tabular-nums; }
+  #heure { -webkit-appearance: none; appearance: none; width: 100%; height: 22px; margin: 8px 0 0; background: transparent; display: block; }
+  #heure::-webkit-slider-runnable-track { height: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--teal) var(--pos, 50%), var(--line) var(--pos, 50%)); }
+  #heure::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; margin-top: -7.5px; border-radius: 50%;
+    background: var(--navy); border: 2.5px solid var(--teal); box-shadow: 0 0 0 4px rgba(56,189,248,.16); }
+  #heure::-moz-range-track { height: 3px; border-radius: 2px; background: var(--line); }
+  #heure::-moz-range-progress { height: 3px; border-radius: 2px; background: var(--teal); }
+  #heure::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--navy); border: 2.5px solid var(--teal); }
+
+  /* Filtres par biere : une puce par valeur presente dans bars.json. */
+  #bieres { display: flex; gap: 6px; margin-top: 10px; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  #bieres::-webkit-scrollbar { display: none; }
+  #bieres button { flex: none; padding: 6px 12px; font-size: 12px; font-weight: 400; color: var(--muted);
+    background: var(--fond-doux); border: 1px solid var(--line); border-radius: 999px; white-space: nowrap; cursor: pointer; }
+  #bieres button.actif { background: var(--teal); color: var(--navy); font-weight: 500; border-color: var(--teal); }
+
+  #ligne3 { display: flex; gap: 7px; margin-top: 9px; }
+  #modes { flex: 1; display: flex; background: var(--fond-doux); border: 1px solid var(--line); border-radius: 999px; padding: 3px; }
+  #modes button { flex: 1; padding: 7px 0; font-size: 12px; font-weight: 400; color: var(--muted); background: transparent;
+    border: 0; border-radius: 999px; white-space: nowrap; cursor: pointer; }
+  #modes button.actif { background: var(--teal); color: var(--navy); font-weight: 500; }
+  .icone { flex: 0 0 36px; display: grid; place-items: center; background: var(--fond-doux); border: 1px solid var(--line);
+    border-radius: 999px; padding: 0; cursor: pointer; }
+  .icone svg { width: 17px; height: 17px; stroke: var(--cream); fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ---------- Legende ---------- */
+  #legende { position: absolute; z-index: 2; left: 10px; top: calc(var(--haut-h) + 10px); display: inline-flex; gap: 11px; align-items: center;
+    background: rgba(7,14,26,.86); border-radius: 999px; padding: 6px 12px; font-size: 11px; color: var(--cream); }
+  #legende[hidden] { display: none; }
+  #legende i { display: inline-block; width: 16px; height: 3px; border-radius: 2px; margin-right: 5px; vertical-align: middle; }
+  #legende em { font-style: normal; color: var(--muted); }
+  .maplibregl-ctrl-top-right { top: calc(var(--haut-h) + 6px); }
+  .maplibregl-ctrl-attrib { font-size: 10px; }
+
+  /* ---------- Marqueurs de bars ---------- */
+  .bar { display: flex; align-items: flex-start; gap: 5px; padding: 3px 8px 3px 6px; cursor: pointer;
+    background: rgba(7,14,26,.93); border: 1px solid var(--line); border-radius: 11px; box-shadow: 0 2px 10px rgba(0,0,0,.4); }
+  .bar.choisi { border-color: var(--teal); box-shadow: 0 0 0 2px rgba(56,189,248,.35); }
+  /* Trajet affiche : les autres etiquettes s'effacent, comme les trottoirs. */
+  #map.trajet .bar:not(.choisi) { opacity: .38; }
+  .bar .pastille { width: 10px; height: 10px; border-radius: 50%; flex: none; margin-top: 3px; border: 1px solid rgba(0,0,0,.35); }
+  .bar .txt { display: flex; flex-direction: column; line-height: 1.2; }
+  .bar .nom { font-size: 10.5px; font-weight: 400; white-space: nowrap; }
+  .bar .nom b { font-weight: 500; color: var(--teal); font-variant-numeric: tabular-nums; }
+  .bar .nom em { font-style: normal; color: var(--muted); }
+  .bar .bieres { font-size: 8px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+
+  /* ---------- Panneau bas ---------- */
+  #bas { left: 10px; right: 10px; bottom: max(10px, env(safe-area-inset-bottom)); border-radius: 18px; padding: 8px 16px 12px;
+    max-height: 52vh; display: flex; flex-direction: column; }
+  #poignee { width: 36px; height: 4px; border-radius: 2px; background: rgba(242,237,231,.22); margin: 0 auto 9px; flex: none; }
+  #statut { font-size: 13px; color: var(--muted); line-height: 1.45; }
+  #statut[hidden], #resultat[hidden], #liste[hidden] { display: none; }
+  /* Le panneau est borne a 52vh : pour que la liste et les etapes defilent au
+     lieu de pousser le panneau hors de l'ecran, il faut min-height 0 sur les
+     conteneurs flex intermediaires. */
+  #resultat { display: flex; flex-direction: column; min-height: 0; }
+  #liste { overflow-y: auto; -webkit-overflow-scrolling: touch; margin: 0; padding: 0; list-style: none; min-height: 0; }
+  #compteur { margin-top: 6px; font-size: 11px; color: var(--muted); }
+  #compteur[hidden] { display: none; }
+  #liste li { display: flex; align-items: center; gap: 9px; padding: 7px 0; border-top: 1px solid var(--line); cursor: pointer; }
+  #liste li:first-child { border-top: 0; }
+  #liste .pastille { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  #liste .nom { flex: 1; font-size: 13px; min-width: 0; }
+  #liste .nom small { display: block; font-size: 10.5px; color: var(--muted); margin-top: 1px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #liste .mes { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+  #liste .mes b { display: block; font-weight: 400; color: var(--cream); font-size: 12.5px; }
+  #retour { display: block; width: fit-content; margin: 0 0 6px; padding: 0; background: none; border: 0;
+    font-size: 11px; text-align: left; color: var(--teal); cursor: pointer; }
+  #titre-bar { font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 19px; margin-bottom: 4px; }
+  #titre-bar small { font-family: var(--sans); font-style: normal; font-size: 11.5px; color: var(--muted); }
+  #titre-bar small b { font-weight: 400; }
+  #hero { display: flex; align-items: baseline; gap: 8px; }
+  #pct { font-size: 40px; line-height: .9; color: var(--teal); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  #pct:empty { display: none; }
+  #pct small { font-size: 20px; }
+  #hero em { font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 21px; line-height: 1.05; min-width: 0; }
+  #mode-aff { margin-left: auto; flex: none; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  #sous { margin-top: 6px; font-size: 12px; color: var(--muted); }
+  #sous b { font-weight: 400; color: var(--cream); }
+  #sous .alerte { color: var(--soleil); }
+  #etapes { list-style: none; margin: 10px 0 0; padding: 8px 0 0; border-top: 1px solid var(--line);
+    overflow-y: auto; -webkit-overflow-scrolling: touch; flex: 1 1 auto; min-height: 0; }
+  #etapes li { display: flex; align-items: baseline; gap: 10px; padding: 5px 0; font-size: 13px; }
+  #etapes .rue { flex: 1; font-weight: 400; min-width: 0; }
+  #etapes .rue small { display: block; font-size: 10.5px; color: var(--muted); font-weight: 300; margin-top: 1px; }
+  #etapes .mes { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 11.5px; white-space: nowrap; }
+  #etapes .mes b { font-weight: 400; color: var(--cream); }
+  #etapes li.trav { padding: 2px 0; font-size: 10.5px; color: var(--muted); align-items: center; }
+  #etapes li.trav svg { width: 14px; height: 14px; flex: none; stroke: var(--muted); fill: none;
+    stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  #pied { margin-top: 9px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 10px; color: var(--muted); line-height: 1.4; }
+  #bas.replie #liste, #bas.replie #etapes { display: none; }
+
+  @media (prefers-reduced-motion: reduce) { #splash, #splash .barre > i { transition: none; } }
+</style>
+</head>
+<body>
+<div id="map"></div>
+
+<div id="splash">
+  <img src="icone-512.png" alt="">
+  <div class="marque">Terrasses</div>
+  <div class="slogan">à l'ombre, heure par heure</div>
+  <div class="barre"><i id="splash-jauge"></i></div>
+  <div class="etat" id="splash-etat">Chargement des ombres</div>
+  <div class="pied">Démonstrateur · Paris, le Marais</div>
+</div>
+
+<div class="panneau" id="haut">
+  <div id="ligne1">
+    <span id="marque">Ombra</span>
+    <span id="titre">Terrasses</span>
+    <span id="date-wrap"><select id="date" aria-label="Journée"></select></span>
+    <span id="heure-affichee">--:--</span>
+  </div>
+  <input type="range" id="heure" min="0" max="0" step="1" value="0" aria-label="Heure">
+  <div id="bieres"></div>
+  <div id="ligne3">
+    <div id="modes">
+      <button data-k="0">Direct</button>
+      <button data-k="1" class="actif">Équilibré</button>
+      <button data-k="4">Ombre max</button>
+    </div>
+    <button class="icone" id="btn-geoloc" title="Partir de ma position" aria-label="Partir de ma position">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+    </button>
+    <button class="icone" id="btn-effacer" title="Effacer" aria-label="Effacer">
+      <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+</div>
+
+<div id="legende" hidden>
+  <span><i style="background:var(--ombre)"></i>à l'ombre</span>
+  <span><i style="background:var(--soleil)"></i>au soleil</span>
+  <em id="legende-heure"></em>
+</div>
+
+<div class="panneau replie" id="bas">
+  <div id="poignee"></div>
+  <div id="statut">Chargement…</div>
+  <div id="compteur" hidden></div>
+  <ol id="liste" hidden></ol>
+  <div id="resultat" hidden>
+    <button id="retour">← Tous les bars</button>
+    <div id="titre-bar"></div>
+    <div id="hero"><span id="pct"></span><em id="hero-libelle">du trajet à&nbsp;l'ombre</em><span id="mode-aff"></span></div>
+    <div id="sous"></div>
+    <ol id="etapes"></ol>
+  </div>
+  <div id="pied">Ombre du trottoir devant l'entrée, à l'heure choisie, parasols non compris.</div>
+</div>
+
+<script type="module">
+import { MoteurOmbra, wgs84VersL93 } from "./moteur.js";
+
+const $ = (id) => document.getElementById(id);
+const statutEl = $("statut"), resultatEl = $("resultat"), listeEl = $("liste"), instructionsEl = $("etapes");
+const dateSel = $("date"), heureInput = $("heure"), heureAff = $("heure-affichee");
+const basEl = $("bas"), legendeEl = $("legende"), legendeHeure = $("legende-heure");
+const MSG_INVITE = "Touchez un bar pour y aller.";
+const RAYON_TROTTOIR_M = 30;   // cf. commentaire d'en-tete : rattachement a la rue de l'adresse
+const SEUIL_OMBRE = 0.5;       // >= 50 % du trottoir a l'ombre = pastille "ombre"
+
+function mesure(nom) {
+  try { if (window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path: nom, title: nom, event: true }); } catch {}
+}
+
+const majHautH = () => document.documentElement.style.setProperty("--haut-h", $("haut").offsetHeight + "px");
+new ResizeObserver(majHautH).observe($("haut"));
+majHautH();
+
+const lisJson = async (u) => { const r = await fetch(u); if (!r.ok) throw new Error(`${u}: ${r.status}`); return r.json(); };
+const [manifest, bars] = await Promise.all([lisJson("data/paris/manifest.json"), lisJson("bars.json")]);
+
+const CHARGES_ATTENDUS = manifest.tuiles.length * 2;
+let chargesFaits = 0;
+function majProgres() {
+  const pct = Math.min(100, Math.round((100 * chargesFaits) / CHARGES_ATTENDUS));
+  $("splash-etat").textContent = `Chargement des ombres · ${pct} %`;
+  $("splash-jauge").style.width = pct + "%";
+}
+const suivi = (f) => async (...args) => { const r = await f(...args); chargesFaits += 1; majProgres(); return r; };
+majProgres();
+
+const moteur = new MoteurOmbra(
+  manifest,
+  suivi((id) => lisJson(`data/paris/tuiles/${id}.json`)),
+  suivi((date, id) => lisJson(`data/paris/ombres/${date}/${id}.json`)),
+);
+await moteur.chargeToutesLesTuiles();
+
+// ---------- Dates et heures (memes regles que l'application) ----------
+const libelleDate = (iso) => {
+  try { return new Date(iso + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" }); }
+  catch { return iso; }
+};
+const dates = Object.keys(manifest.dates);
+for (const d of dates) { const o = document.createElement("option"); o.value = d; o.textContent = libelleDate(d); dateSel.appendChild(o); }
+const maintenant = new Date();
+const aujourdhui = `${maintenant.getFullYear()}-${String(maintenant.getMonth() + 1).padStart(2, "0")}-${String(maintenant.getDate()).padStart(2, "0")}`;
+dateSel.value = dates.includes(aujourdhui) ? aujourdhui : (dates.find((d) => d > aujourdhui) ?? dates[dates.length - 1]);
+
+let pasListe = [];
+const heureCourante = () => pasListe[heureInput.value];
+function majHeureAff() {
+  heureAff.textContent = heureCourante();
+  legendeHeure.textContent = `à ${heureCourante()}`;
+  const pos = heureInput.max > 0 ? (100 * heureInput.value / heureInput.max) : 0;
+  heureInput.style.setProperty("--pos", pos + "%");
+}
+function majDate() {
+  pasListe = manifest.dates[dateSel.value];
+  heureInput.min = 0; heureInput.max = pasListe.length - 1;
+  // 13:00 par defaut : en fin de journee tous les trottoirs sont a l'ombre et
+  // la page n'apprend rien ; a 13:00 les etats different d'un bar a l'autre
+  // (mesure : bench/bars/profil_journee.mjs).
+  const defaut = pasListe.indexOf("13:00");
+  heureInput.value = defaut >= 0 ? defaut : Math.floor(pasListe.length / 2);
+  majHeureAff();
+}
+majDate();
+
+// ---------- Rattachement des bars au trottoir de leur adresse ----------
+const sansAccent = (t) => (t || "").normalize("NFD").replace(/\p{Mn}/gu, "");
+const cle = (t) => sansAccent(t).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+const rueDeAdresse = (a) => cle((a || "").split(",")[0].replace(/^\d+\s*(bis|ter|quater)?\s*/i, ""));
+
+function distancePointSegment(x, y, geomL93) {
+  let d = Infinity;
+  for (let p = 1; p < geomL93.length; p++) {
+    const ax = geomL93[p - 1][0], ay = geomL93[p - 1][1];
+    const dx = geomL93[p][0] - ax, dy = geomL93[p][1] - ay, l2 = dx * dx + dy * dy;
+    let t = l2 > 0 ? ((x - ax) * dx + (y - ay) * dy) / l2 : 0;
+    t = Math.max(0, Math.min(1, t));
+    d = Math.min(d, Math.hypot(x - (ax + t * dx), y - (ay + t * dy)));
+  }
+  return d;
+}
+
+/** Trottoir de reference d'un bar : le plus proche PARMI CEUX de la rue de son
+ * adresse, dans RAYON_TROTTOIR_M. null = hors zone (rue absente de l'export,
+ * ou trou devant ce numero) : on n'affiche alors aucune valeur d'ombre. */
+function rattache(bar) {
+  const [x, y] = wgs84VersL93(bar.lon, bar.lat);
+  const rue = rueDeAdresse(bar.adresse);
+  let meilleur = null;
+  for (const s of moteur.segments.values()) {
+    if (!s.rue) continue;
+    const r = cle(s.rue);
+    if (!(r.includes(rue) || rue.includes(r))) continue;
+    // Rejet rapide par la boite englobante avant le calcul exact.
+    let hors = true;
+    for (const [px, py] of s.geomL93) {
+      if (Math.abs(px - x) <= RAYON_TROTTOIR_M && Math.abs(py - y) <= RAYON_TROTTOIR_M) { hors = false; break; }
+    }
+    if (hors) continue;
+    const d = distancePointSegment(x, y, s.geomL93);
+    if (d <= RAYON_TROTTOIR_M && (!meilleur || d < meilleur.d)) meilleur = { d, i: s.i, rue: s.rue, cote: s.cote };
+  }
+  return meilleur;
+}
+
+for (const b of bars) {
+  b.trottoir = rattache(b);
+  b.bieres = Array.isArray(b.bieres) ? b.bieres : [];
+}
+const horsZone = bars.filter((b) => !b.trottoir);
+if (horsZone.length) console.log(`Non affichés, pas de trottoir de leur rue à moins de ${RAYON_TROTTOIR_M} m : ` +
+  horsZone.map((b) => b.nom).join(", "));
+
+/** Etat d'ombre d'un bar a l'instant affiche : {classe, pct} ou null. */
+function etat(bar) {
+  if (!bar.trottoir) return null;
+  const o = moteur.ombres.get(dateSel.value);
+  if (!o) return null;
+  const arr = o.v.get(bar.trottoir.i);
+  if (!arr) return null;
+  const val = arr[o.pas.indexOf(heureCourante())];
+  if (val === 255) return { classe: "indetermine", pct: null };   // sous emprise batie
+  return { classe: val / 100 >= SEUIL_OMBRE ? "ombre" : "soleil", pct: val };
+}
+const COULEUR = { ombre: "#1565c0", soleil: "#f0a202", indetermine: "#616161" };
+
+// ---------- Filtre par biere ----------
+const bieresConnues = [];
+for (const b of bars) for (const n of b.bieres) if (!bieresConnues.some((x) => cle(x) === cle(n))) bieresConnues.push(n);
+bieresConnues.sort((a, b) => a.localeCompare(b, "fr"));
+let filtre = null;   // null = toutes
+const paramInitial = new URLSearchParams(location.search).get("biere");
+if (paramInitial) filtre = bieresConnues.find((n) => cle(n) === cle(paramInitial)) ?? null;
+
+function majUrl() {
+  const u = new URL(location.href);
+  if (filtre) u.searchParams.set("biere", cle(filtre).replace(/ /g, "-")); else u.searchParams.delete("biere");
+  history.replaceState(null, "", u);
+}
+function construireFiltres() {
+  const el = $("bieres");
+  el.innerHTML = "";
+  const ajoute = (libelle, valeur) => {
+    const b = document.createElement("button");
+    b.textContent = libelle;
+    b.classList.toggle("actif", valeur === filtre);
+    b.addEventListener("click", () => { filtre = valeur; majUrl(); construireFiltres(); majAffichage(); });
+    el.appendChild(b);
+  };
+  ajoute("Toutes", null);
+  for (const n of bieresConnues) ajoute(n, n);
+}
+// Un bar sans trottoir rattache n'est pas affiche : "hors zone" est une limite
+// du perimetre du demonstrateur, pas une information utile au visiteur. Le
+// nombre de bars ecartes est rappele en une ligne au pied du panneau.
+const visible = (b) => b.trottoir && (!filtre || b.bieres.some((n) => cle(n) === cle(filtre)));
+const filtreBiere = (b) => !filtre || b.bieres.some((n) => cle(n) === cle(filtre));
+construireFiltres();
+majUrl();
+
+// ---------- Carte ----------
+let kActuel = 1, depart = null, barChoisi = null, calculEnCours = 0, reference = null;
+const LIBELLE_MODE = { 0: "Direct", 1: "Équilibré", 4: "Ombre max" };
+const [lonMin, latMin, lonMax, latMax] = manifest.bbox_wgs84;
+const map = new maplibregl.Map({
+  container: "map",
+  style: { version: 8, sources: { osm: { type: "raster",
+    tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], tileSize: 256,
+    attribution: "&copy; OpenStreetMap contributors" } },
+    layers: [{ id: "osm", type: "raster", source: "osm" }] },
+  bounds: [[lonMin, latMin], [lonMax, latMax]], fitBoundsOptions: { padding: { top: 190, bottom: 130, left: 20, right: 20 } },
+  attributionControl: false,
+});
+map.addControl(new maplibregl.AttributionControl({ compact: true }), "top-right");
+
+const couleurTrottoir = ["case", ["get", "indetermine"], "#9e9e9e",
+  ["interpolate", ["linear"], ["coalesce", ["get", "fraction_ombre"], 0], 0, "#f0a202", 1, "#1565c0"]];
+const couleurClasse = ["match", ["get", "classe"],
+  "ombre", "#0b3d91", "soleil", "#e65100", "indetermine", "#616161", "#6a1b9a"];
+const OPACITE_TROTTOIRS = { libre: 0.75, trajet: 0.28 };
+function attenuerTrottoirs(trajetAffiche) {
+  if (map.getLayer("trottoirs")) map.setPaintProperty("trottoirs", "line-opacity", trajetAffiche ? OPACITE_TROTTOIRS.trajet : OPACITE_TROTTOIRS.libre);
+  $("map").classList.toggle("trajet", trajetAffiche);
+}
+
+// Un marqueur MapLibre par bar, cree une fois ; seuls la pastille, le
+// pourcentage et la visibilite changent ensuite.
+// Les etiquettes sont larges : celles des bars situes a l'ouest du groupe
+// s'ouvrent vers la droite, celles de l'est vers la gauche, pour qu'aucune ne
+// sorte de l'ecran au cadrage initial.
+const affichables = bars.filter((b) => b.trottoir);
+const lonMilieu = affichables.length
+  ? (Math.min(...affichables.map((b) => b.lon)) + Math.max(...affichables.map((b) => b.lon))) / 2 : 0;
+// Les bars proches auraient des etiquettes superposees. On les traite du nord
+// au sud : celui du sud DESCEND d'un cran (34 px, la hauteur d'une etiquette).
+// Descendre, et non monter, evite qu'une etiquette decalee vienne recouvrir
+// celle du bar situe juste au nord.
+const ordre = bars.filter((b) => b.trottoir).sort((a, b) => b.lat - a.lat);
+const posL93 = new Map(bars.map((b) => [b, wgs84VersL93(b.lon, b.lat)]));
+for (let i = 0; i < ordre.length; i++) {
+  const [x, y] = posL93.get(ordre[i]);
+  let etage = 0;
+  for (let j = 0; j < i; j++) {
+    const [x2, y2] = posL93.get(ordre[j]);
+    if (Math.hypot(x - x2, y - y2) < 350) etage = Math.max(etage, (ordre[j].etage ?? 0) + 1);
+  }
+  ordre[i].etage = etage % 4;   // au-dela on recommence, plutot que de partir loin du point
+}
+for (const b of bars) {
+  const el = document.createElement("div");
+  el.className = "bar";
+  el.innerHTML = `<span class="pastille"></span><span class="txt"><span class="nom"></span><span class="bieres"></span></span>`;
+  el.querySelector(".bieres").textContent = b.bieres.join(" · ");
+  el.addEventListener("click", (e) => { e.stopPropagation(); choisirBar(b); });
+  b.el = el;
+  b.marqueur = new maplibregl.Marker({ element: el, anchor: b.lon < lonMilieu ? "bottom-left" : "bottom-right",
+    offset: [0, 34 * (b.etage ?? 0)] }).setLngLat([b.lon, b.lat]);
+}
+
+map.on("load", async () => {
+  map.addSource("trottoirs", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+  map.addLayer({ id: "trottoirs", type: "line", source: "trottoirs",
+    paint: { "line-color": couleurTrottoir, "line-width": 2.5, "line-opacity": OPACITE_TROTTOIRS.libre } });
+  map.addSource("route", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+  map.addLayer({ id: "route-casing", type: "line", source: "route",
+    layout: { "line-cap": "round", "line-join": "round" },
+    paint: { "line-color": "#fff", "line-width": 9, "line-opacity": .9 } });
+  map.addLayer({ id: "route-marche", type: "line", source: "route",
+    filter: ["!", ["in", ["get", "classe"], ["literal", ["traversee", "liaison"]]]],
+    layout: { "line-cap": "round", "line-join": "round" },
+    paint: { "line-color": couleurClasse, "line-width": 5 } });
+  map.addLayer({ id: "route-traversee", type: "line", source: "route",
+    filter: ["in", ["get", "classe"], ["literal", ["traversee", "liaison"]]],
+    paint: { "line-color": "#6a1b9a", "line-width": 4, "line-dasharray": [1, 1.2] } });
+  map.addSource("points", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+  map.addLayer({ id: "points", type: "circle", source: "points",
+    paint: { "circle-radius": 8, "circle-color": "#00695c", "circle-stroke-width": 2.5, "circle-stroke-color": "#fff" } });
+  map.on("click", (e) => poserDepart([e.lngLat.lng, e.lngLat.lat]));
+  for (const b of bars) if (b.trottoir) b.marqueur.addTo(map);
+  // Cadrage sur les bars (et non sur toute la zone exportee) : les marqueurs
+  // sont des etiquettes HTML, ils doivent tenir entre le bandeau et le panneau.
+  const bb = bars.filter((b) => b.trottoir).reduce(
+    (a, b) => [Math.min(a[0], b.lon), Math.min(a[1], b.lat), Math.max(a[2], b.lon), Math.max(a[3], b.lat)], [180, 90, -180, -90]);
+  // Le padding haut couvre le bandeau plus l'etagement des etiquettes (4 x 30 px)
+  // et la hauteur d'une etiquette : sinon les marqueurs decales passent dessous.
+  map.fitBounds([[bb[0], bb[1]], [bb[2], bb[3]]], { duration: 0,
+    padding: { top: $("haut").offsetHeight + 24 + 5 * 34, bottom: basEl.offsetHeight + 24, left: 34, right: 34 } });
+  await majTrottoirs();
+  majAffichage();
+  $("splash").classList.add("cache");
+  legendeEl.hidden = false;
+  montrerListe();
+});
+
+async function majTrottoirs() {
+  await moteur.chargeOmbres(dateSel.value);
+  map.getSource("trottoirs").setData(moteur.trottoirsGeoJSON(dateSel.value, heureCourante()));
+}
+
+function majPointDepart() {
+  map.getSource("points").setData({ type: "FeatureCollection",
+    features: depart ? [{ type: "Feature", geometry: { type: "Point", coordinates: depart }, properties: {} }] : [] });
+}
+
+// ---------- Affichage des bars (marqueurs + liste) ----------
+function majAffichage() {
+  for (const b of bars) {
+    const montre = visible(b);
+    b.marqueur.getElement().style.display = montre ? "" : "none";
+    if (!montre) continue;
+    const e = etat(b);
+    const el = b.el;
+    el.querySelector(".pastille").style.background = e ? COULEUR[e.classe] : COULEUR.indetermine;
+    el.querySelector(".nom").innerHTML = e.pct !== null
+      ? `${b.nom} <b>${e.pct} %</b>`
+      : `${b.nom} <em>passage couvert</em>`;
+    el.querySelector(".bieres").textContent = b.bieres.join(" · ");
+    el.classList.toggle("choisi", b === barChoisi);
+    // Les etiquettes se recouvrent dans les rues denses : le bar choisi devant.
+    el.style.zIndex = b === barChoisi ? 3 : 2;
+  }
+  majListe();
+  majCompteur();
+  majPied();
+}
+
+/** Une ligne de contexte toujours visible, panneau replie compris : combien de
+ * bars affiches sont a l'ombre a cet instant. */
+function majCompteur() {
+  const dedans = bars.filter(visible);
+  const ombre = dedans.filter((b) => etat(b).classe === "ombre").length;
+  const el = $("compteur");
+  el.hidden = resultatEl.hidden === false;
+  el.textContent = dedans.length
+    ? `${ombre} bar${ombre > 1 ? "s" : ""} à l'ombre sur ${dedans.length} · touchez la poignée pour la liste`
+    : "Aucun bar pour ce filtre dans le périmètre du démonstrateur.";
+}
+
+/** Pied de page : la promesse de la mesure, et le rappel discret des bars de
+ * la selection que le perimetre du demonstrateur ne couvre pas. */
+function majPied() {
+  const ecartes = bars.filter((b) => filtreBiere(b) && !b.trottoir).length;
+  $("pied").innerHTML = "Ombre du trottoir devant l'entrée, à l'heure choisie, parasols non compris."
+    + (ecartes ? `<br>${ecartes} bar${ecartes > 1 ? "s" : ""} de la sélection ${ecartes > 1 ? "sont situés" : "est situé"} `
+      + "hors du périmètre couvert par le démonstrateur." : "");
+}
+
+function majListe() {
+  const rang = (b) => { const e = etat(b); return e.classe === "ombre" ? 0 : (e.classe === "soleil" ? 2 : 1); };
+  const dedans = bars.filter(visible).sort((a, b) => rang(a) - rang(b) || (etat(b)?.pct ?? -1) - (etat(a)?.pct ?? -1)
+    || a.nom.localeCompare(b.nom, "fr"));
+  listeEl.innerHTML = "";
+  for (const b of dedans) {
+    const e = etat(b);
+    const li = document.createElement("li");
+    const p = document.createElement("span"); p.className = "pastille";
+    p.style.background = COULEUR[e.classe];
+    const nom = document.createElement("span"); nom.className = "nom"; nom.textContent = b.nom;
+    const sm = document.createElement("small");
+    sm.textContent = `${b.trottoir.rue} (${b.trottoir.cote}) · ${b.bieres.join(", ")}`;
+    nom.appendChild(sm);
+    const mes = document.createElement("span"); mes.className = "mes";
+    if (e.pct !== null) { const g = document.createElement("b"); g.textContent = `${e.pct} %`; mes.appendChild(g); }
+    else mes.appendChild(document.createTextNode("couvert"));
+    if (depart) mes.appendChild(document.createTextNode(`${Math.round(distanceVolOiseau(depart, [b.lon, b.lat]))} m`));
+    li.append(p, nom, mes);
+    li.addEventListener("click", () => choisirBar(b));
+    listeEl.appendChild(li);
+  }
+}
+
+function distanceVolOiseau(a, b) {
+  const [ax, ay] = wgs84VersL93(a[0], a[1]), [bx, by] = wgs84VersL93(b[0], b[1]);
+  return Math.hypot(ax - bx, ay - by);
+}
+
+function montrerListe() {
+  barChoisi = null;
+  resultatEl.hidden = true;
+  statutEl.hidden = false;
+  statutEl.textContent = depart ? "Départ posé. Touchez un bar." : MSG_INVITE;
+  listeEl.hidden = false;
+  $("compteur").hidden = false;
+  majAffichage();
+}
+
+function montrerStatut(texte) {
+  resultatEl.hidden = true;
+  listeEl.hidden = true;
+  $("compteur").hidden = true;
+  statutEl.hidden = false;
+  statutEl.textContent = texte;
+}
+
+function poserDepart(coord) {
+  depart = coord;
+  majPointDepart();
+  if (barChoisi) calculer(); else { montrerListe(); }
+}
+
+function choisirBar(b) {
+  barChoisi = b;
+  majAffichage();
+  if (!depart) {
+    map.easeTo({ center: [b.lon, b.lat], duration: 400, offset: [0, -60] });
+    montrerStatut(`${b.nom} choisi. Touchez la carte pour votre point de départ, ou ◎ pour votre position.`);
+    return;
+  }
+  calculer();   // le cadrage se fait sur le trajet entier, pas sur le bar seul
+}
+
+function effacer() {
+  depart = null; barChoisi = null; reference = null;
+  majPointDepart();
+  map.getSource("route").setData({ type: "FeatureCollection", features: [] });
+  attenuerTrottoirs(false);
+  instructionsEl.innerHTML = "";
+  montrerListe();
+}
+
+// ---------- Itineraire (meme logique que l'application) ----------
+function decomposeMarche(texte) {
+  const m = /^(.*?),\s*cote\s+(\S+)$/.exec(texte);
+  return m ? { rue: m[1], cote: `côté ${m[2]}` } : { rue: texte, cote: "" };
+}
+const svgTrav = () => {
+  const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  s.setAttribute("viewBox", "0 0 24 24");
+  s.innerHTML = '<path d="M4 12h16M14 6l6 6-6 6"/>';
+  return s;
+};
+function rendreInstructions(instructions) {
+  instructionsEl.innerHTML = "";
+  let i = 0;
+  while (i < instructions.length) {
+    const inst = instructions[i];
+    if (inst.type !== "marche") {
+      let n = 0, pieton = 0;
+      while (i < instructions.length && instructions[i].type !== "marche") { n += 1; if (/pieton/.test(instructions[i].texte)) pieton += 1; i += 1; }
+      const li = document.createElement("li");
+      li.className = "trav";
+      li.appendChild(svgTrav());
+      let t = n === 1 ? "1 traversée" : `${n} traversées`;
+      if (pieton === n) t += " au passage piéton"; else if (pieton === 0) t += " au carrefour";
+      li.appendChild(document.createTextNode(t));
+      instructionsEl.appendChild(li);
+      continue;
+    }
+    const { rue, cote } = decomposeMarche(inst.texte);
+    const notes = [];
+    if (cote) notes.push(cote);
+    if (inst.indetermine) notes.push("passage couvert en partie");
+    if (inst.confiance_faible) notes.push("fiabilité faible");
+    const li = document.createElement("li");
+    const nom = document.createElement("span"); nom.className = "rue"; nom.textContent = rue;
+    if (notes.length) { const sm = document.createElement("small"); sm.textContent = notes.join(" · "); nom.appendChild(sm); }
+    const mes = document.createElement("span"); mes.className = "mes";
+    const b = document.createElement("b"); b.textContent = `${inst.distance_m} m`; mes.appendChild(b);
+    if (inst.pct_ombre !== null) mes.appendChild(document.createTextNode(` · ${inst.pct_ombre} % ombre`));
+    li.append(nom, mes);
+    instructionsEl.appendChild(li);
+    i += 1;
+  }
+}
+
+// Reference du detour : plus court chemin reel (k=0, penalite de traversee 0),
+// memorisee par couple depart/arrivee. Identique a index.html.
+async function referenceDetour(arrivee) {
+  const cle2 = `${depart.join(",")}|${arrivee.join(",")}`;
+  if (!reference || reference.cle !== cle2) {
+    const r = await moteur.route({ depart, arrivee, k: 0, facteurTraversee: 0,
+      date: dateSel.value, heure: heureCourante(), chargerToutes: true });
+    reference = { cle: cle2, distance_m: r.reachable ? r.distance_m : null };
+  }
+  return reference.distance_m;
+}
+
+async function calculer() {
+  if (!depart || !barChoisi) return;
+  const bar = barChoisi;
+  const id = ++calculEnCours;
+  const etaitDeplie = !resultatEl.hidden && !basEl.classList.contains("replie");
+  montrerStatut("Calcul…");
+  const arrivee = [bar.lon, bar.lat];
+  const r = await moteur.route({ depart, arrivee, k: kActuel, date: dateSel.value, heure: heureCourante(), chargerToutes: true });
+  if (id !== calculEnCours) return;
+  if (!r.reachable) { montrerStatut(r.message); return; }
+  const plusCourt = await referenceDetour(arrivee);
+  if (id !== calculEnCours) return;
+  mesure("bar-itineraire");
+  const { troncons, instructions } = moteur.detaillerTrace(r, depart, arrivee);
+  map.getSource("route").setData({ type: "FeatureCollection", features: troncons.map((t) => ({
+    type: "Feature", geometry: { type: "LineString", coordinates: t.coords }, properties: { classe: t.classe } })) });
+  attenuerTrottoirs(true);
+  // Cadrage sur le trajet entier (depart et bar compris), entre le bandeau et
+  // le panneau : un trajet qui sort de l'ecran ne se lit pas.
+  const bbT = [...troncons.flatMap((t) => t.coords), depart, arrivee].reduce(
+    (a, c) => [Math.min(a[0], c[0]), Math.min(a[1], c[1]), Math.max(a[2], c[0]), Math.max(a[3], c[1])], [180, 90, -180, -90]);
+  map.fitBounds([[bbT[0], bbT[1]], [bbT[2], bbT[3]]], { duration: 500, maxZoom: 16.5,
+    padding: { top: $("haut").offsetHeight + 30, bottom: 190, left: 40, right: 40 } });
+
+  // Titre : l'etat du trottoir DEVANT LE BAR (ce que la page promet), a ne pas
+  // confondre avec le pourcentage d'ombre du trajet affiche juste en dessous.
+  const e = etat(bar);
+  const motEtat = e.classe === "ombre" ? "trottoir à l'ombre"
+    : (e.classe === "soleil" ? "trottoir au soleil" : "trottoir sous passage couvert");
+  $("titre-bar").innerHTML = `${bar.nom} <small>· <b style="color:${COULEUR[e.classe]}">${motEtat}</b>`
+    + `${e.pct !== null ? ` (${e.pct} % d'ombre)` : ""} à ${heureCourante()}</small>`;
+  const evaluable = r.fraction_ombre_trajet !== null;
+  $("pct").innerHTML = evaluable ? `${Math.round(r.fraction_ombre_trajet * 100)}<small> %</small>` : "";
+  $("hero-libelle").textContent = evaluable ? "du trajet à l'ombre" : "ombre non évaluée";
+  $("mode-aff").textContent = LIBELLE_MODE[r.k_demande] ?? `k = ${r.k_demande}`;
+  const morceaux = [`<b>${Math.round(r.distance_m).toLocaleString("fr-FR")} m</b>`];
+  if (plusCourt) {
+    const detour = Math.round((r.distance_m / plusCourt - 1) * 100);
+    if (detour >= 1) morceaux.push(`+${detour} % vs le plus court`);
+  }
+  if (r.plafonne) morceaux.push(`<span class="alerte">détour plafonné, k = ${r.k_effectif}</span>`);
+  morceaux.push(r.nb_traversees === 1 ? "1 traversée" : `${r.nb_traversees} traversées`);
+  morceaux.push(`départ ${r.heure}`);
+  $("sous").innerHTML = morceaux.join(" · ");
+  rendreInstructions(instructions);
+  statutEl.hidden = true;
+  listeEl.hidden = true;
+  $("compteur").hidden = true;
+  resultatEl.hidden = false;
+  // Premier resultat : panneau replie, la carte d'abord (comme l'application) ;
+  // recalcul (mode, heure) : on garde l'etat choisi par l'utilisateur.
+  basEl.classList.toggle("replie", !etaitDeplie);
+}
+
+// ---------- Interactions ----------
+$("poignee").addEventListener("click", () => basEl.classList.toggle("replie"));
+$("retour").addEventListener("click", () => {
+  map.getSource("route").setData({ type: "FeatureCollection", features: [] });
+  attenuerTrottoirs(false);
+  montrerListe();
+});
+document.querySelectorAll("#modes button[data-k]").forEach((b) => b.addEventListener("click", () => {
+  kActuel = parseFloat(b.dataset.k);
+  document.querySelectorAll("#modes button[data-k]").forEach((x) => x.classList.toggle("actif", x === b));
+  if (barChoisi && depart) calculer();
+}));
+$("btn-effacer").addEventListener("click", effacer);
+$("btn-geoloc").addEventListener("click", () => {
+  if (!navigator.geolocation) { montrerStatut("Géolocalisation indisponible."); return; }
+  montrerStatut("Recherche de votre position…");
+  navigator.geolocation.getCurrentPosition((pos) => {
+    const c = [pos.coords.longitude, pos.coords.latitude];
+    const marge = 0.01;
+    if (c[0] < lonMin - marge || c[0] > lonMax + marge || c[1] < latMin - marge || c[1] > latMax + marge) {
+      montrerStatut("Vous êtes hors du périmètre couvert (" + manifest.perimetre + ") — touchez la carte à la place.");
+      return;
+    }
+    map.flyTo({ center: c, zoom: 15.5 });
+    poserDepart(c);
+  }, () => { montrerStatut("Position refusée ou indisponible — touchez la carte."); },
+  { enableHighAccuracy: true, timeout: 8000 });
+});
+// Glissement du curseur : pastilles et liste seulement (immediat, 11 bars).
+heureInput.addEventListener("input", () => { majHeureAff(); majAffichage(); });
+// Relachement : trottoirs de la carte, et itineraire s'il y en a un.
+heureInput.addEventListener("change", async () => { await majTrottoirs(); majAffichage(); if (barChoisi && depart) calculer(); });
+dateSel.addEventListener("change", async () => { majDate(); await majTrottoirs(); majAffichage(); if (barChoisi && depart) calculer(); });
+</script>
+</body>
+</html>

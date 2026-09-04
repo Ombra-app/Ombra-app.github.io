@@ -1,0 +1,134 @@
+[
+ {
+  "nom": "Cuba Compagnie Café",
+  "adresse": "48 boulevard Beaumarchais, 75011 Paris",
+  "lat": 48.857139,
+  "lon": 2.368426,
+  "bieres": [
+   "Paix Dieu"
+  ],
+  "source": "paixdieubeer.be/deguster-fr",
+  "osm": "node/1301125684",
+  "note": ""
+ },
+ {
+  "nom": "Oculto",
+  "adresse": "27 rue Quincampoix, 75004 Paris",
+  "lat": 48.860122,
+  "lon": 2.349974,
+  "bieres": [
+   "Paix Dieu"
+  ],
+  "source": "paixdieubeer.be/deguster-fr",
+  "osm": "node/2003145820",
+  "note": ""
+ },
+ {
+  "nom": "Le Gamin Bastille",
+  "adresse": "34 rue de Lappe, 75011 Paris",
+  "lat": 48.852888,
+  "lon": 2.374177,
+  "bieres": [
+   "Paix Dieu"
+  ],
+  "source": "paixdieubeer.be/deguster-fr",
+  "osm": "node/7046302996",
+  "note": ""
+ },
+ {
+  "nom": "Temple Rock Tavern",
+  "adresse": "31 rue des Lombards, 75001 Paris",
+  "lat": 48.859565,
+  "lon": 2.348487,
+  "bieres": [
+   "Paix Dieu"
+  ],
+  "source": "paixdieubeer.be/deguster-fr",
+  "osm": "node/677967813",
+  "note": ""
+ },
+ {
+  "nom": "Jeannot et Colin",
+  "adresse": "51 boulevard Voltaire, 75011 Paris",
+  "lat": 48.86238,
+  "lon": 2.372771,
+  "bieres": [
+   "Paix Dieu"
+  ],
+  "source": "paixdieubeer.be/deguster-fr",
+  "osm": "node/3147462374",
+  "note": ""
+ },
+ {
+  "nom": "Carpe Diem Café",
+  "adresse": "21 rue des Halles, 75001 Paris",
+  "lat": 48.860523,
+  "lon": 2.345855,
+  "bieres": [
+   "Paix Dieu"
+  ],
+  "source": "paixdieubeer.be/deguster-fr",
+  "osm": "node/5563839925",
+  "note": ""
+ },
+ {
+  "nom": "Au Trappiste",
+  "adresse": "4 rue Saint-Denis, 75001 Paris",
+  "lat": 48.85829,
+  "lon": 2.34756,
+  "bieres": [
+   "Paix Dieu"
+  ],
+  "source": "untappd.com/v/au-trappiste/20606",
+  "osm": "node/5712090157",
+  "note": ""
+ },
+ {
+  "nom": "2Bis Café",
+  "adresse": "2 bis rue des Écoles, 75005 Paris",
+  "lat": 48.847705,
+  "lon": 2.352263,
+  "bieres": [
+   "Paix Dieu"
+  ],
+  "source": "paixdieubeer.be/deguster-fr",
+  "osm": "node/715356465",
+  "note": ""
+ },
+ {
+  "nom": "O'Jason Irish Pub",
+  "adresse": "12 rue de la Huchette, 75005 Paris",
+  "lat": 48.852899,
+  "lon": 2.346116,
+  "bieres": [
+   "Paix Dieu"
+  ],
+  "source": "paixdieubeer.be/deguster-fr",
+  "osm": "node/708844522",
+  "note": ""
+ },
+ {
+  "nom": "RoadHouse Bar",
+  "adresse": "27 rue de la Huchette, 75005 Paris",
+  "lat": 48.853069,
+  "lon": 2.345103,
+  "bieres": [
+   "Paix Dieu"
+  ],
+  "source": "paixdieubeer.be/deguster-fr",
+  "osm": "node/2534780315",
+  "note": ""
+ },
+ {
+  "nom": "La Torche",
+  "adresse": "103 boulevard Voltaire, 75011 Paris",
+  "lat": 48.859036,
+  "lon": 2.378353,
+  "bieres": [
+   "Paix Dieu"
+  ],
+  "source": "schlouk-map.com/en/drinks/paix-dieu",
+  "osm": "node/1307259085",
+  "note": ""
+ }
+]
