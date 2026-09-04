@@ -279,7 +279,6 @@ const moteur = new MoteurOmbra(
   suivi((date, id) => lisJson(`data/paris/ombres/${date}/${id}.json`)),
 );
 await moteur.chargeToutesLesTuiles();
-
 // ---------- Dates et heures (memes regles que l'application) ----------
 const libelleDate = (iso) => {
   try { return new Date(iso + "T12:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" }); }
@@ -310,6 +309,14 @@ function majDate() {
   majHeureAff();
 }
 majDate();
+
+// Les ombres du jour sont chargees ici, et non dans map.on("load") : MapLibre
+// n'emet "load" qu'apres son premier rendu, et un navigateur suspend le rendu
+// d'un onglet en arriere-plan. Sans cela, quiconque ouvre le lien puis change
+// d'application reste bloque sur l'ecran de chargement (defaut constate en
+// reel). Ici les donnees et la liste sont pretes des la fin du chargement ;
+// la carte se peuple quand elle s'affiche.
+await moteur.chargeOmbres(dateSel.value);
 
 // ---------- Rattachement des bars au trottoir de leur adresse ----------
 const sansAccent = (t) => (t || "").normalize("NFD").replace(/\p{Mn}/gu, "");
@@ -485,6 +492,7 @@ map.on("load", async () => {
     paint: { "circle-radius": 8, "circle-color": "#00695c", "circle-stroke-width": 2.5, "circle-stroke-color": "#fff" } });
   map.on("click", (e) => poserDepart([e.lngLat.lng, e.lngLat.lat]));
   for (const b of bars) if (b.trottoir) b.marqueur.addTo(map);
+  map.getSource("trottoirs").setData(moteur.trottoirsGeoJSON(dateSel.value, heureCourante()));
   // Cadrage sur les bars (et non sur toute la zone exportee) : les marqueurs
   // sont des etiquettes HTML, ils doivent tenir entre le bandeau et le panneau.
   const bb = bars.filter((b) => b.trottoir).reduce(
@@ -493,19 +501,25 @@ map.on("load", async () => {
   // et la hauteur d'une etiquette : sinon les marqueurs decales passent dessous.
   map.fitBounds([[bb[0], bb[1]], [bb[2], bb[3]]], { duration: 0,
     padding: { top: $("haut").offsetHeight + 24 + 5 * 34, bottom: basEl.offsetHeight + 24, left: 34, right: 34 } });
-  await majTrottoirs();
   majAffichage();
-  $("splash").classList.add("cache");
-  legendeEl.hidden = false;
-  montrerListe();
 });
+
+// Donnees pretes : l'application est utilisable (liste, filtre, itineraire),
+// que la carte ait fini de s'initialiser ou non.
+$("splash").classList.add("cache");
+legendeEl.hidden = false;
+montrerListe();
+
+/** Vrai quand les sources de la carte existent (apres map.on("load")). */
+const carteEnPlace = () => Boolean(map.getSource && map.getSource("trottoirs"));
 
 async function majTrottoirs() {
   await moteur.chargeOmbres(dateSel.value);
-  map.getSource("trottoirs").setData(moteur.trottoirsGeoJSON(dateSel.value, heureCourante()));
+  if (carteEnPlace()) map.getSource("trottoirs").setData(moteur.trottoirsGeoJSON(dateSel.value, heureCourante()));
 }
 
 function majPointDepart() {
+  if (!carteEnPlace()) return;
   map.getSource("points").setData({ type: "FeatureCollection",
     features: depart ? [{ type: "Feature", geometry: { type: "Point", coordinates: depart }, properties: {} }] : [] });
 }
@@ -610,7 +624,7 @@ function choisirBar(b) {
   barChoisi = b;
   majAffichage();
   if (!depart) {
-    map.easeTo({ center: [b.lon, b.lat], duration: 400, offset: [0, -60] });
+    if (carteEnPlace()) map.easeTo({ center: [b.lon, b.lat], duration: 400, offset: [0, -60] });
     montrerStatut(`${b.nom} choisi. Touchez la carte pour votre point de départ, ou ◎ pour votre position.`);
     return;
   }
@@ -620,7 +634,7 @@ function choisirBar(b) {
 function effacer() {
   depart = null; barChoisi = null; reference = null;
   majPointDepart();
-  map.getSource("route").setData({ type: "FeatureCollection", features: [] });
+  if (carteEnPlace()) map.getSource("route").setData({ type: "FeatureCollection", features: [] });
   attenuerTrottoirs(false);
   instructionsEl.innerHTML = "";
   montrerListe();
@@ -697,15 +711,17 @@ async function calculer() {
   if (id !== calculEnCours) return;
   mesure("bar-itineraire");
   const { troncons, instructions } = moteur.detaillerTrace(r, depart, arrivee);
-  map.getSource("route").setData({ type: "FeatureCollection", features: troncons.map((t) => ({
-    type: "Feature", geometry: { type: "LineString", coordinates: t.coords }, properties: { classe: t.classe } })) });
-  attenuerTrottoirs(true);
-  // Cadrage sur le trajet entier (depart et bar compris), entre le bandeau et
-  // le panneau : un trajet qui sort de l'ecran ne se lit pas.
-  const bbT = [...troncons.flatMap((t) => t.coords), depart, arrivee].reduce(
-    (a, c) => [Math.min(a[0], c[0]), Math.min(a[1], c[1]), Math.max(a[2], c[0]), Math.max(a[3], c[1])], [180, 90, -180, -90]);
-  map.fitBounds([[bbT[0], bbT[1]], [bbT[2], bbT[3]]], { duration: 500, maxZoom: 16.5,
-    padding: { top: $("haut").offsetHeight + 30, bottom: 190, left: 40, right: 40 } });
+  if (carteEnPlace()) {
+    map.getSource("route").setData({ type: "FeatureCollection", features: troncons.map((t) => ({
+      type: "Feature", geometry: { type: "LineString", coordinates: t.coords }, properties: { classe: t.classe } })) });
+    attenuerTrottoirs(true);
+    // Cadrage sur le trajet entier (depart et bar compris), entre le bandeau et
+    // le panneau : un trajet qui sort de l'ecran ne se lit pas.
+    const bbT = [...troncons.flatMap((t) => t.coords), depart, arrivee].reduce(
+      (a, c) => [Math.min(a[0], c[0]), Math.min(a[1], c[1]), Math.max(a[2], c[0]), Math.max(a[3], c[1])], [180, 90, -180, -90]);
+    map.fitBounds([[bbT[0], bbT[1]], [bbT[2], bbT[3]]], { duration: 500, maxZoom: 16.5,
+      padding: { top: $("haut").offsetHeight + 30, bottom: 190, left: 40, right: 40 } });
+  }
 
   // Titre : l'etat du trottoir DEVANT LE BAR (ce que la page promet), a ne pas
   // confondre avec le pourcentage d'ombre du trajet affiche juste en dessous.
@@ -740,7 +756,7 @@ async function calculer() {
 // ---------- Interactions ----------
 $("poignee").addEventListener("click", () => basEl.classList.toggle("replie"));
 $("retour").addEventListener("click", () => {
-  map.getSource("route").setData({ type: "FeatureCollection", features: [] });
+  if (carteEnPlace()) map.getSource("route").setData({ type: "FeatureCollection", features: [] });
   attenuerTrottoirs(false);
   montrerListe();
 });
