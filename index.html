@@ -38,7 +38,13 @@
      Habillage (2026-09-02) : identite graphique Ombra (navy / teal / cream,
      Cormorant Garamond italic + Jost), ecran de chargement, legende, panneau
      resultat replie/deplie, attenuation des trottoirs quand un trajet est
-     affiche. Aucune modification de moteur.js. -->
+     affiche. Aucune modification de moteur.js.
+     Corrections d'affichage (2026-09-04, retours utilisateurs) : heros
+     "94 % du trajet a l'ombre" (le chiffre seul etait pris pour une
+     temperature) et detour "+X % vs le plus court", calcule contre le vrai
+     plus court chemin du reseau (k = 0, penalite de traversee 0) et non plus
+     contre la route Direct penalisee. Toujours aucune modification de
+     moteur.js. -->
 <!-- Mesure d'audience : GoatCounter (sans cookie, sans donnee personnelle).
      Le script est charge en asynchrone et echoue en silence hors ligne. Le code
      du site est dans GOATCOUNTER_CODE ci-dessous ; vide = aucune mesure. -->
@@ -135,10 +141,16 @@
   #statut[hidden] { display: none; }
   #resultat[hidden] { display: none; }
   #hero { display: flex; align-items: baseline; gap: 8px; }
-  #pct { font-size: 46px; line-height: .9; color: var(--teal); font-variant-numeric: tabular-nums; }
+  #pct { font-size: 46px; line-height: .9; color: var(--teal); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  #pct:empty { display: none; }
   #pct small { font-size: 23px; }
-  #hero em { font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 24px; }
-  #mode-aff { margin-left: auto; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  /* Le libelle complete le chiffre ("94 % du trajet a l'ombre") : sans le mot
+     "trajet", le gros pourcentage a ete pris pour une temperature. Sur 390 px
+     de large il passe sur deux lignes ("du trajet" / "a l'ombre", espace
+     insecable entre "a" et "l'ombre") plutot que de raccourcir ou de reduire
+     le chiffre. */
+  #hero em { font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 24px; line-height: 1.05; min-width: 0; }
+  #mode-aff { margin-left: auto; flex: none; font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
   #sous { margin-top: 7px; font-size: 12px; color: var(--muted); }
   #sous b { font-weight: 400; color: var(--cream); }
   #sous .alerte { color: var(--soleil); }
@@ -200,7 +212,7 @@
   <div id="poignee"></div>
   <div id="statut">Chargement…</div>
   <div id="resultat" hidden>
-    <div id="hero"><span id="pct"></span><em>à l'ombre</em><span id="mode-aff"></span></div>
+    <div id="hero"><span id="pct"></span><em id="hero-libelle">du trajet à&nbsp;l'ombre</em><span id="mode-aff"></span></div>
     <div id="sous"></div>
     <ol id="etapes"></ol>
   </div>
@@ -293,6 +305,28 @@ majDate();
 
 let kActuel = 0, points = [], calculEnCours = 0;
 const LIBELLE_MODE = { 0: "Direct", 1: "Équilibré", 4: "Ombre max" };
+// Reference du pourcentage de detour ("+X % vs le plus court") : le VRAI plus
+// court chemin du reseau, meme A* a k = 0 et penalite de traversee 0
+// (parametre optionnel facteurTraversee du moteur, defaut 1 : moteur.js
+// intouche). Le mode Direct garde ses penalites (15 m passage pieton, 30 m
+// carrefour) : c'est un itineraire marchable qui evite les traversees, pas le
+// plus court, et il est compare a la meme reference que les deux autres.
+// Calculee une fois par couple depart/arrivee (elle ne depend ni du mode ni
+// de l'heure : a k = 0 l'ombre n'entre pas dans le cout), jamais affichee
+// sur la carte. Le plafond de detour x1,5 du moteur reste base sur la route
+// Direct penalisee (contrat de parite Python/JS, graph.route_avec_plafond).
+let reference = null; // { cle, distance_m }
+async function referenceDetour() {
+  const cle = points.map((p) => p.join(",")).join("|");
+  if (!reference || reference.cle !== cle) {
+    const ref = await moteur.route({
+      depart: points[0], arrivee: points[1], k: 0, facteurTraversee: 0,
+      date: dateSel.value, heure: pasListe[heureInput.value], chargerToutes: true,
+    });
+    reference = { cle, distance_m: ref.reachable ? ref.distance_m : null };
+  }
+  return reference.distance_m;
+}
 
 const [lonMin, latMin, lonMax, latMax] = manifest.bbox_wgs84;
 const map = new maplibregl.Map({
@@ -371,6 +405,7 @@ function poserPoint(coord) {
 
 function effacer(toutEffacerUI = true) {
   points = [];
+  reference = null;
   majPoints();
   map.getSource("route").setData({ type: "FeatureCollection", features: [] });
   attenuerTrottoirs(false);
@@ -438,20 +473,30 @@ async function calculer() {
   });
   if (id !== calculEnCours) return;
   if (!r.reachable) { montrerStatut(r.message); return; }
+  const plusCourt = await referenceDetour();
+  if (id !== calculEnCours) return;
   mesure("itineraire-calcule");
   const { troncons, instructions } = moteur.detaillerTrace(r, points[0], points[1]);
   map.getSource("route").setData({ type: "FeatureCollection", features: troncons.map((t) => ({
     type: "Feature", geometry: { type: "LineString", coordinates: t.coords }, properties: { classe: t.classe } })) });
   attenuerTrottoirs(true);
 
-  const pct = r.fraction_ombre_trajet === null ? "?" : Math.round(r.fraction_ombre_trajet * 100);
-  $("pct").innerHTML = `${pct}<small> %</small>`;
+  // Heros : "94 % du trajet a l'ombre". Sans trottoir evalue sur le trajet
+  // (points sur le meme segment, traversees seules), il n'y a pas de chiffre :
+  // "ombre non evaluee" plutot qu'un "? %" bancal.
+  const evaluable = r.fraction_ombre_trajet !== null;
+  $("pct").innerHTML = evaluable ? `${Math.round(r.fraction_ombre_trajet * 100)}<small> %</small>` : "";
+  $("hero-libelle").textContent = evaluable ? "du trajet à\u00a0l'ombre" : "ombre non évaluée";
   $("mode-aff").textContent = LIBELLE_MODE[r.k_demande] ?? `k = ${r.k_demande}`;
   const morceaux = [`<b>${Math.round(r.distance_m).toLocaleString("fr-FR")} m</b>`];
-  if (r.k_demande > 0) {
-    morceaux.push(`+${Math.round((r.ratio_detour - 1) * 100)} % vs direct`);
-    if (r.plafonne) morceaux.push(`<span class="alerte">détour plafonné, k = ${r.k_effectif}</span>`);
+  // Detour par rapport au vrai plus court chemin du reseau (cf. referenceDetour),
+  // sur les trois modes, masque quand il arrondit a 0 %. Le ratio_detour du
+  // moteur (base Direct penalisee) n'est plus affiche.
+  if (plusCourt) {
+    const detour = Math.round((r.distance_m / plusCourt - 1) * 100);
+    if (detour >= 1) morceaux.push(`+${detour} % vs le plus court`);
   }
+  if (r.plafonne) morceaux.push(`<span class="alerte">détour plafonné, k = ${r.k_effectif}</span>`);
   morceaux.push(r.nb_traversees === 1 ? "1 traversée" : `${r.nb_traversees} traversées`);
   morceaux.push(`départ ${r.heure}`);
   $("sous").innerHTML = morceaux.join(" · ");
