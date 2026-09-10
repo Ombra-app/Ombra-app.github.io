@@ -1,0 +1,1117 @@
+{
+ "format_version": 1,
+ "ville": "paris",
+ "perimetre": "Paris intra-muros",
+ "crs": "WGS84 (EPSG:4326)",
+ "bbox_wgs84": [
+  2.245851,
+  48.808999,
+  2.425518,
+  48.906135
+ ],
+ "taille_tuile_m": 1000.0,
+ "pas_minutes": 15,
+ "n_segments": 364344,
+ "n_traversees": 121562,
+ "dates": {
+  "2026-09-10": [
+   "08:00",
+   "08:15",
+   "08:30",
+   "08:45",
+   "09:00",
+   "09:15",
+   "09:30",
+   "09:45",
+   "10:00",
+   "10:15",
+   "10:30",
+   "10:45",
+   "11:00",
+   "11:15",
+   "11:30",
+   "11:45",
+   "12:00",
+   "12:15",
+   "12:30",
+   "12:45",
+   "13:00",
+   "13:15",
+   "13:30",
+   "13:45",
+   "14:00",
+   "14:15",
+   "14:30",
+   "14:45",
+   "15:00",
+   "15:15",
+   "15:30",
+   "15:45",
+   "16:00",
+   "16:15",
+   "16:30",
+   "16:45",
+   "17:00",
+   "17:15",
+   "17:30",
+   "17:45",
+   "18:00",
+   "18:15",
+   "18:30",
+   "18:45",
+   "19:00",
+   "19:15",
+   "19:30"
+  ],
+  "2026-09-20": [
+   "08:15",
+   "08:30",
+   "08:45",
+   "09:00",
+   "09:15",
+   "09:30",
+   "09:45",
+   "10:00",
+   "10:15",
+   "10:30",
+   "10:45",
+   "11:00",
+   "11:15",
+   "11:30",
+   "11:45",
+   "12:00",
+   "12:15",
+   "12:30",
+   "12:45",
+   "13:00",
+   "13:15",
+   "13:30",
+   "13:45",
+   "14:00",
+   "14:15",
+   "14:30",
+   "14:45",
+   "15:00",
+   "15:15",
+   "15:30",
+   "15:45",
+   "16:00",
+   "16:15",
+   "16:30",
+   "16:45",
+   "17:00",
+   "17:15",
+   "17:30",
+   "17:45",
+   "18:00",
+   "18:15",
+   "18:30",
+   "18:45",
+   "19:00",
+   "19:15"
+  ],
+  "2026-09-30": [
+   "08:30",
+   "08:45",
+   "09:00",
+   "09:15",
+   "09:30",
+   "09:45",
+   "10:00",
+   "10:15",
+   "10:30",
+   "10:45",
+   "11:00",
+   "11:15",
+   "11:30",
+   "11:45",
+   "12:00",
+   "12:15",
+   "12:30",
+   "12:45",
+   "13:00",
+   "13:15",
+   "13:30",
+   "13:45",
+   "14:00",
+   "14:15",
+   "14:30",
+   "14:45",
+   "15:00",
+   "15:15",
+   "15:30",
+   "15:45",
+   "16:00",
+   "16:15",
+   "16:30",
+   "16:45",
+   "17:00",
+   "17:15",
+   "17:30",
+   "17:45",
+   "18:00",
+   "18:15",
+   "18:30",
+   "18:45"
+  ]
+ },
+ "jours": {
+  "2026-09-05": "2026-09-10",
+  "2026-09-06": "2026-09-10",
+  "2026-09-07": "2026-09-10",
+  "2026-09-08": "2026-09-10",
+  "2026-09-09": "2026-09-10",
+  "2026-09-10": "2026-09-10",
+  "2026-09-11": "2026-09-10",
+  "2026-09-12": "2026-09-10",
+  "2026-09-13": "2026-09-10",
+  "2026-09-14": "2026-09-10",
+  "2026-09-15": "2026-09-10",
+  "2026-09-16": "2026-09-20",
+  "2026-09-17": "2026-09-20",
+  "2026-09-18": "2026-09-20",
+  "2026-09-19": "2026-09-20",
+  "2026-09-20": "2026-09-20",
+  "2026-09-21": "2026-09-20",
+  "2026-09-22": "2026-09-20",
+  "2026-09-23": "2026-09-20",
+  "2026-09-24": "2026-09-20",
+  "2026-09-25": "2026-09-30",
+  "2026-09-26": "2026-09-30",
+  "2026-09-27": "2026-09-30",
+  "2026-09-28": "2026-09-30",
+  "2026-09-29": "2026-09-30",
+  "2026-09-30": "2026-09-30",
+  "2026-10-01": "2026-09-30",
+  "2026-10-02": "2026-09-30",
+  "2026-10-03": "2026-09-30",
+  "2026-10-04": "2026-09-30",
+  "2026-10-05": "2026-09-30"
+ },
+ "tuiles": [
+  {
+   "id": "644_6858",
+   "n_segments": 207,
+   "n_noeuds": 219,
+   "n_traversees": 16
+  },
+  {
+   "id": "644_6859",
+   "n_segments": 450,
+   "n_noeuds": 470,
+   "n_traversees": 108
+  },
+  {
+   "id": "644_6860",
+   "n_segments": 555,
+   "n_noeuds": 583,
+   "n_traversees": 70
+  },
+  {
+   "id": "644_6861",
+   "n_segments": 23,
+   "n_noeuds": 25,
+   "n_traversees": 0
+  },
+  {
+   "id": "644_6863",
+   "n_segments": 18,
+   "n_noeuds": 19,
+   "n_traversees": 0
+  },
+  {
+   "id": "644_6864",
+   "n_segments": 174,
+   "n_noeuds": 182,
+   "n_traversees": 17
+  },
+  {
+   "id": "644_6865",
+   "n_segments": 65,
+   "n_noeuds": 70,
+   "n_traversees": 2
+  },
+  {
+   "id": "644_6866",
+   "n_segments": 16,
+   "n_noeuds": 17,
+   "n_traversees": 0
+  },
+  {
+   "id": "645_6857",
+   "n_segments": 1362,
+   "n_noeuds": 1383,
+   "n_traversees": 327
+  },
+  {
+   "id": "645_6858",
+   "n_segments": 1640,
+   "n_noeuds": 1720,
+   "n_traversees": 577
+  },
+  {
+   "id": "645_6859",
+   "n_segments": 2047,
+   "n_noeuds": 2147,
+   "n_traversees": 798
+  },
+  {
+   "id": "645_6860",
+   "n_segments": 2731,
+   "n_noeuds": 2869,
+   "n_traversees": 1046
+  },
+  {
+   "id": "645_6861",
+   "n_segments": 1239,
+   "n_noeuds": 1293,
+   "n_traversees": 287
+  },
+  {
+   "id": "645_6862",
+   "n_segments": 156,
+   "n_noeuds": 171,
+   "n_traversees": 37
+  },
+  {
+   "id": "645_6863",
+   "n_segments": 143,
+   "n_noeuds": 150,
+   "n_traversees": 2
+  },
+  {
+   "id": "645_6864",
+   "n_segments": 1504,
+   "n_noeuds": 1517,
+   "n_traversees": 388
+  },
+  {
+   "id": "645_6865",
+   "n_segments": 1449,
+   "n_noeuds": 1487,
+   "n_traversees": 365
+  },
+  {
+   "id": "645_6866",
+   "n_segments": 233,
+   "n_noeuds": 254,
+   "n_traversees": 57
+  },
+  {
+   "id": "645_6867",
+   "n_segments": 174,
+   "n_noeuds": 182,
+   "n_traversees": 44
+  },
+  {
+   "id": "646_6856",
+   "n_segments": 1,
+   "n_noeuds": 2,
+   "n_traversees": 0
+  },
+  {
+   "id": "646_6857",
+   "n_segments": 1947,
+   "n_noeuds": 1938,
+   "n_traversees": 551
+  },
+  {
+   "id": "646_6858",
+   "n_segments": 3081,
+   "n_noeuds": 3133,
+   "n_traversees": 1140
+  },
+  {
+   "id": "646_6859",
+   "n_segments": 1087,
+   "n_noeuds": 1174,
+   "n_traversees": 395
+  },
+  {
+   "id": "646_6860",
+   "n_segments": 2052,
+   "n_noeuds": 2151,
+   "n_traversees": 709
+  },
+  {
+   "id": "646_6861",
+   "n_segments": 3421,
+   "n_noeuds": 3418,
+   "n_traversees": 1404
+  },
+  {
+   "id": "646_6862",
+   "n_segments": 2646,
+   "n_noeuds": 2672,
+   "n_traversees": 1158
+  },
+  {
+   "id": "646_6863",
+   "n_segments": 1322,
+   "n_noeuds": 1363,
+   "n_traversees": 419
+  },
+  {
+   "id": "646_6864",
+   "n_segments": 1366,
+   "n_noeuds": 1411,
+   "n_traversees": 203
+  },
+  {
+   "id": "646_6865",
+   "n_segments": 1925,
+   "n_noeuds": 1983,
+   "n_traversees": 442
+  },
+  {
+   "id": "646_6866",
+   "n_segments": 1461,
+   "n_noeuds": 1498,
+   "n_traversees": 317
+  },
+  {
+   "id": "646_6867",
+   "n_segments": 186,
+   "n_noeuds": 205,
+   "n_traversees": 68
+  },
+  {
+   "id": "647_6857",
+   "n_segments": 1703,
+   "n_noeuds": 1746,
+   "n_traversees": 568
+  },
+  {
+   "id": "647_6858",
+   "n_segments": 2416,
+   "n_noeuds": 2483,
+   "n_traversees": 897
+  },
+  {
+   "id": "647_6859",
+   "n_segments": 1756,
+   "n_noeuds": 1836,
+   "n_traversees": 535
+  },
+  {
+   "id": "647_6860",
+   "n_segments": 3167,
+   "n_noeuds": 3359,
+   "n_traversees": 1350
+  },
+  {
+   "id": "647_6861",
+   "n_segments": 2453,
+   "n_noeuds": 2542,
+   "n_traversees": 1003
+  },
+  {
+   "id": "647_6862",
+   "n_segments": 2874,
+   "n_noeuds": 2899,
+   "n_traversees": 1116
+  },
+  {
+   "id": "647_6863",
+   "n_segments": 3252,
+   "n_noeuds": 3291,
+   "n_traversees": 1035
+  },
+  {
+   "id": "647_6864",
+   "n_segments": 2609,
+   "n_noeuds": 2785,
+   "n_traversees": 1010
+  },
+  {
+   "id": "647_6865",
+   "n_segments": 2275,
+   "n_noeuds": 2334,
+   "n_traversees": 721
+  },
+  {
+   "id": "647_6866",
+   "n_segments": 802,
+   "n_noeuds": 793,
+   "n_traversees": 255
+  },
+  {
+   "id": "647_6867",
+   "n_segments": 255,
+   "n_noeuds": 259,
+   "n_traversees": 8
+  },
+  {
+   "id": "648_6857",
+   "n_segments": 2063,
+   "n_noeuds": 2100,
+   "n_traversees": 911
+  },
+  {
+   "id": "648_6858",
+   "n_segments": 2842,
+   "n_noeuds": 2867,
+   "n_traversees": 1015
+  },
+  {
+   "id": "648_6859",
+   "n_segments": 3057,
+   "n_noeuds": 3098,
+   "n_traversees": 1221
+  },
+  {
+   "id": "648_6860",
+   "n_segments": 3708,
+   "n_noeuds": 3749,
+   "n_traversees": 1417
+  },
+  {
+   "id": "648_6861",
+   "n_segments": 3195,
+   "n_noeuds": 3453,
+   "n_traversees": 1426
+  },
+  {
+   "id": "648_6862",
+   "n_segments": 2307,
+   "n_noeuds": 2530,
+   "n_traversees": 874
+  },
+  {
+   "id": "648_6863",
+   "n_segments": 3897,
+   "n_noeuds": 3985,
+   "n_traversees": 1467
+  },
+  {
+   "id": "648_6864",
+   "n_segments": 3789,
+   "n_noeuds": 3875,
+   "n_traversees": 1580
+  },
+  {
+   "id": "648_6865",
+   "n_segments": 2673,
+   "n_noeuds": 2821,
+   "n_traversees": 1029
+  },
+  {
+   "id": "648_6866",
+   "n_segments": 827,
+   "n_noeuds": 883,
+   "n_traversees": 216
+  },
+  {
+   "id": "648_6867",
+   "n_segments": 115,
+   "n_noeuds": 97,
+   "n_traversees": 8
+  },
+  {
+   "id": "649_6857",
+   "n_segments": 2455,
+   "n_noeuds": 2325,
+   "n_traversees": 628
+  },
+  {
+   "id": "649_6858",
+   "n_segments": 3068,
+   "n_noeuds": 3106,
+   "n_traversees": 959
+  },
+  {
+   "id": "649_6859",
+   "n_segments": 3287,
+   "n_noeuds": 3380,
+   "n_traversees": 1177
+  },
+  {
+   "id": "649_6860",
+   "n_segments": 2963,
+   "n_noeuds": 3027,
+   "n_traversees": 1204
+  },
+  {
+   "id": "649_6861",
+   "n_segments": 2637,
+   "n_noeuds": 2748,
+   "n_traversees": 988
+  },
+  {
+   "id": "649_6862",
+   "n_segments": 2531,
+   "n_noeuds": 2624,
+   "n_traversees": 764
+  },
+  {
+   "id": "649_6863",
+   "n_segments": 2559,
+   "n_noeuds": 2677,
+   "n_traversees": 788
+  },
+  {
+   "id": "649_6864",
+   "n_segments": 3218,
+   "n_noeuds": 3320,
+   "n_traversees": 1256
+  },
+  {
+   "id": "649_6865",
+   "n_segments": 2793,
+   "n_noeuds": 2868,
+   "n_traversees": 1136
+  },
+  {
+   "id": "649_6866",
+   "n_segments": 1065,
+   "n_noeuds": 1136,
+   "n_traversees": 454
+  },
+  {
+   "id": "649_6867",
+   "n_segments": 308,
+   "n_noeuds": 317,
+   "n_traversees": 98
+  },
+  {
+   "id": "650_6856",
+   "n_segments": 12,
+   "n_noeuds": 14,
+   "n_traversees": 0
+  },
+  {
+   "id": "650_6857",
+   "n_segments": 3050,
+   "n_noeuds": 2867,
+   "n_traversees": 849
+  },
+  {
+   "id": "650_6858",
+   "n_segments": 3803,
+   "n_noeuds": 3916,
+   "n_traversees": 1484
+  },
+  {
+   "id": "650_6859",
+   "n_segments": 7185,
+   "n_noeuds": 6304,
+   "n_traversees": 1716
+  },
+  {
+   "id": "650_6860",
+   "n_segments": 4037,
+   "n_noeuds": 3985,
+   "n_traversees": 1330
+  },
+  {
+   "id": "650_6861",
+   "n_segments": 3222,
+   "n_noeuds": 3261,
+   "n_traversees": 1060
+  },
+  {
+   "id": "650_6862",
+   "n_segments": 1957,
+   "n_noeuds": 2065,
+   "n_traversees": 713
+  },
+  {
+   "id": "650_6863",
+   "n_segments": 3375,
+   "n_noeuds": 3457,
+   "n_traversees": 1146
+  },
+  {
+   "id": "650_6864",
+   "n_segments": 3728,
+   "n_noeuds": 3781,
+   "n_traversees": 1534
+  },
+  {
+   "id": "650_6865",
+   "n_segments": 3764,
+   "n_noeuds": 3748,
+   "n_traversees": 1336
+  },
+  {
+   "id": "650_6866",
+   "n_segments": 2427,
+   "n_noeuds": 2511,
+   "n_traversees": 1013
+  },
+  {
+   "id": "650_6867",
+   "n_segments": 72,
+   "n_noeuds": 77,
+   "n_traversees": 28
+  },
+  {
+   "id": "651_6857",
+   "n_segments": 2160,
+   "n_noeuds": 2178,
+   "n_traversees": 598
+  },
+  {
+   "id": "651_6858",
+   "n_segments": 3280,
+   "n_noeuds": 3322,
+   "n_traversees": 1022
+  },
+  {
+   "id": "651_6859",
+   "n_segments": 3889,
+   "n_noeuds": 3791,
+   "n_traversees": 1176
+  },
+  {
+   "id": "651_6860",
+   "n_segments": 5149,
+   "n_noeuds": 4629,
+   "n_traversees": 1213
+  },
+  {
+   "id": "651_6861",
+   "n_segments": 5230,
+   "n_noeuds": 5087,
+   "n_traversees": 1800
+  },
+  {
+   "id": "651_6862",
+   "n_segments": 3844,
+   "n_noeuds": 3804,
+   "n_traversees": 1475
+  },
+  {
+   "id": "651_6863",
+   "n_segments": 4746,
+   "n_noeuds": 4746,
+   "n_traversees": 1946
+  },
+  {
+   "id": "651_6864",
+   "n_segments": 4215,
+   "n_noeuds": 4195,
+   "n_traversees": 1749
+  },
+  {
+   "id": "651_6865",
+   "n_segments": 4152,
+   "n_noeuds": 4288,
+   "n_traversees": 1675
+  },
+  {
+   "id": "651_6866",
+   "n_segments": 3222,
+   "n_noeuds": 3472,
+   "n_traversees": 1380
+  },
+  {
+   "id": "651_6867",
+   "n_segments": 220,
+   "n_noeuds": 238,
+   "n_traversees": 97
+  },
+  {
+   "id": "652_6857",
+   "n_segments": 1846,
+   "n_noeuds": 1867,
+   "n_traversees": 608
+  },
+  {
+   "id": "652_6858",
+   "n_segments": 4714,
+   "n_noeuds": 4672,
+   "n_traversees": 1942
+  },
+  {
+   "id": "652_6859",
+   "n_segments": 4172,
+   "n_noeuds": 4361,
+   "n_traversees": 1614
+  },
+  {
+   "id": "652_6860",
+   "n_segments": 3679,
+   "n_noeuds": 3673,
+   "n_traversees": 1299
+  },
+  {
+   "id": "652_6861",
+   "n_segments": 6780,
+   "n_noeuds": 6001,
+   "n_traversees": 1956
+  },
+  {
+   "id": "652_6862",
+   "n_segments": 7601,
+   "n_noeuds": 6479,
+   "n_traversees": 1891
+  },
+  {
+   "id": "652_6863",
+   "n_segments": 5556,
+   "n_noeuds": 5386,
+   "n_traversees": 1870
+  },
+  {
+   "id": "652_6864",
+   "n_segments": 4536,
+   "n_noeuds": 4273,
+   "n_traversees": 1534
+  },
+  {
+   "id": "652_6865",
+   "n_segments": 3857,
+   "n_noeuds": 4017,
+   "n_traversees": 1576
+  },
+  {
+   "id": "652_6866",
+   "n_segments": 1874,
+   "n_noeuds": 2010,
+   "n_traversees": 643
+  },
+  {
+   "id": "652_6867",
+   "n_segments": 164,
+   "n_noeuds": 175,
+   "n_traversees": 25
+  },
+  {
+   "id": "653_6856",
+   "n_segments": 30,
+   "n_noeuds": 31,
+   "n_traversees": 0
+  },
+  {
+   "id": "653_6857",
+   "n_segments": 1382,
+   "n_noeuds": 1437,
+   "n_traversees": 478
+  },
+  {
+   "id": "653_6858",
+   "n_segments": 2774,
+   "n_noeuds": 3013,
+   "n_traversees": 1174
+  },
+  {
+   "id": "653_6859",
+   "n_segments": 2578,
+   "n_noeuds": 2790,
+   "n_traversees": 1105
+  },
+  {
+   "id": "653_6860",
+   "n_segments": 2258,
+   "n_noeuds": 2290,
+   "n_traversees": 836
+  },
+  {
+   "id": "653_6861",
+   "n_segments": 4293,
+   "n_noeuds": 4359,
+   "n_traversees": 1454
+  },
+  {
+   "id": "653_6862",
+   "n_segments": 6803,
+   "n_noeuds": 5933,
+   "n_traversees": 1789
+  },
+  {
+   "id": "653_6863",
+   "n_segments": 8806,
+   "n_noeuds": 7460,
+   "n_traversees": 2077
+  },
+  {
+   "id": "653_6864",
+   "n_segments": 6009,
+   "n_noeuds": 5288,
+   "n_traversees": 1482
+  },
+  {
+   "id": "653_6865",
+   "n_segments": 3062,
+   "n_noeuds": 3142,
+   "n_traversees": 1203
+  },
+  {
+   "id": "653_6866",
+   "n_segments": 2007,
+   "n_noeuds": 2151,
+   "n_traversees": 819
+  },
+  {
+   "id": "653_6867",
+   "n_segments": 106,
+   "n_noeuds": 124,
+   "n_traversees": 43
+  },
+  {
+   "id": "654_6857",
+   "n_segments": 1177,
+   "n_noeuds": 1212,
+   "n_traversees": 379
+  },
+  {
+   "id": "654_6858",
+   "n_segments": 2801,
+   "n_noeuds": 2873,
+   "n_traversees": 1090
+  },
+  {
+   "id": "654_6859",
+   "n_segments": 1704,
+   "n_noeuds": 1865,
+   "n_traversees": 778
+  },
+  {
+   "id": "654_6860",
+   "n_segments": 2373,
+   "n_noeuds": 2556,
+   "n_traversees": 1024
+  },
+  {
+   "id": "654_6861",
+   "n_segments": 4452,
+   "n_noeuds": 4498,
+   "n_traversees": 1452
+  },
+  {
+   "id": "654_6862",
+   "n_segments": 7656,
+   "n_noeuds": 6655,
+   "n_traversees": 1721
+  },
+  {
+   "id": "654_6863",
+   "n_segments": 8138,
+   "n_noeuds": 7075,
+   "n_traversees": 1955
+  },
+  {
+   "id": "654_6864",
+   "n_segments": 6029,
+   "n_noeuds": 5257,
+   "n_traversees": 1288
+  },
+  {
+   "id": "654_6865",
+   "n_segments": 3786,
+   "n_noeuds": 3652,
+   "n_traversees": 1238
+  },
+  {
+   "id": "654_6866",
+   "n_segments": 1673,
+   "n_noeuds": 1705,
+   "n_traversees": 621
+  },
+  {
+   "id": "654_6867",
+   "n_segments": 117,
+   "n_noeuds": 131,
+   "n_traversees": 78
+  },
+  {
+   "id": "655_6857",
+   "n_segments": 783,
+   "n_noeuds": 827,
+   "n_traversees": 227
+  },
+  {
+   "id": "655_6858",
+   "n_segments": 550,
+   "n_noeuds": 584,
+   "n_traversees": 130
+  },
+  {
+   "id": "655_6859",
+   "n_segments": 1911,
+   "n_noeuds": 2098,
+   "n_traversees": 723
+  },
+  {
+   "id": "655_6860",
+   "n_segments": 2464,
+   "n_noeuds": 2699,
+   "n_traversees": 1016
+  },
+  {
+   "id": "655_6861",
+   "n_segments": 4059,
+   "n_noeuds": 4076,
+   "n_traversees": 1321
+  },
+  {
+   "id": "655_6862",
+   "n_segments": 3828,
+   "n_noeuds": 3592,
+   "n_traversees": 1141
+  },
+  {
+   "id": "655_6863",
+   "n_segments": 6365,
+   "n_noeuds": 5641,
+   "n_traversees": 1498
+  },
+  {
+   "id": "655_6864",
+   "n_segments": 4708,
+   "n_noeuds": 4334,
+   "n_traversees": 1200
+  },
+  {
+   "id": "655_6865",
+   "n_segments": 2455,
+   "n_noeuds": 2564,
+   "n_traversees": 932
+  },
+  {
+   "id": "655_6866",
+   "n_segments": 804,
+   "n_noeuds": 842,
+   "n_traversees": 292
+  },
+  {
+   "id": "655_6867",
+   "n_segments": 377,
+   "n_noeuds": 399,
+   "n_traversees": 103
+  },
+  {
+   "id": "656_6857",
+   "n_segments": 103,
+   "n_noeuds": 120,
+   "n_traversees": 44
+  },
+  {
+   "id": "656_6858",
+   "n_segments": 296,
+   "n_noeuds": 322,
+   "n_traversees": 86
+  },
+  {
+   "id": "656_6859",
+   "n_segments": 1265,
+   "n_noeuds": 1394,
+   "n_traversees": 512
+  },
+  {
+   "id": "656_6860",
+   "n_segments": 2728,
+   "n_noeuds": 2924,
+   "n_traversees": 993
+  },
+  {
+   "id": "656_6861",
+   "n_segments": 2849,
+   "n_noeuds": 3012,
+   "n_traversees": 1061
+  },
+  {
+   "id": "656_6862",
+   "n_segments": 2656,
+   "n_noeuds": 2748,
+   "n_traversees": 1026
+  },
+  {
+   "id": "656_6863",
+   "n_segments": 2952,
+   "n_noeuds": 3035,
+   "n_traversees": 1174
+  },
+  {
+   "id": "656_6864",
+   "n_segments": 2613,
+   "n_noeuds": 2591,
+   "n_traversees": 903
+  },
+  {
+   "id": "656_6865",
+   "n_segments": 942,
+   "n_noeuds": 969,
+   "n_traversees": 294
+  },
+  {
+   "id": "656_6866",
+   "n_segments": 1364,
+   "n_noeuds": 1411,
+   "n_traversees": 357
+  },
+  {
+   "id": "656_6867",
+   "n_segments": 244,
+   "n_noeuds": 252,
+   "n_traversees": 44
+  },
+  {
+   "id": "657_6858",
+   "n_segments": 9,
+   "n_noeuds": 12,
+   "n_traversees": 6
+  },
+  {
+   "id": "657_6859",
+   "n_segments": 376,
+   "n_noeuds": 399,
+   "n_traversees": 97
+  },
+  {
+   "id": "657_6860",
+   "n_segments": 924,
+   "n_noeuds": 999,
+   "n_traversees": 401
+  },
+  {
+   "id": "657_6861",
+   "n_segments": 498,
+   "n_noeuds": 520,
+   "n_traversees": 193
+  },
+  {
+   "id": "657_6862",
+   "n_segments": 259,
+   "n_noeuds": 270,
+   "n_traversees": 111
+  },
+  {
+   "id": "657_6863",
+   "n_segments": 178,
+   "n_noeuds": 193,
+   "n_traversees": 56
+  },
+  {
+   "id": "657_6864",
+   "n_segments": 262,
+   "n_noeuds": 288,
+   "n_traversees": 147
+  },
+  {
+   "id": "657_6865",
+   "n_segments": 15,
+   "n_noeuds": 17,
+   "n_traversees": 0
+  },
+  {
+   "id": "657_6866",
+   "n_segments": 154,
+   "n_noeuds": 163,
+   "n_traversees": 21
+  },
+  {
+   "id": "657_6867",
+   "n_segments": 221,
+   "n_noeuds": 222,
+   "n_traversees": 10
+  }
+ ],
+ "conventions": {
+  "valeur_ombre": "0-100 = % d'ombre ; 255 = indetermine (sous emprise batie, traite comme ombre)",
+  "conf": "bitset (np.packbits) : 1 = confiance faible, ordre segment-major identique a v",
+  "doublons_arete": "meme paire (a,b) : le dernier segment (i croissant) gagne (parite networkx)",
+  "jours": "jour du calendrier -> journee de 'dates' qui le sert. L'application affiche le jour demande ; un jour absent de cette table n'est pas propose."
+ }
+}
